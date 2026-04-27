@@ -26,6 +26,7 @@ public class PlayerHealth : MonoBehaviourPun, IOnEventCallback
 
     public float CurrentHealth => currentHealth;
     public float MaxHealth => maxHealth;
+    public HealthBar healthBar;
     public bool IsDead => isDead;
 
     private void Awake()
@@ -60,6 +61,8 @@ public class PlayerHealth : MonoBehaviourPun, IOnEventCallback
 
     private void Start()
     {
+        currentHealth = maxHealth;
+        healthBar.SetHealth(currentHealth, maxHealth);
         Debug.Log("Vida inicial: " + currentHealth);
     }
 
@@ -86,6 +89,11 @@ public class PlayerHealth : MonoBehaviourPun, IOnEventCallback
         currentHealth = Mathf.Clamp(currentHealth, 0f, maxHealth);
 
         Debug.Log("Vida actual: " + currentHealth);
+
+        if(currentHealth < 0)
+            currentHealth = 0;
+
+        healthBar.SetHealth(currentHealth, maxHealth);
 
         if (currentHealth <= 0f)
         {
@@ -164,7 +172,7 @@ public class PlayerHealth : MonoBehaviourPun, IOnEventCallback
 
             int deadPlayerActorNumber = (int)data[0];
 
-            Debug.Log("RaiseEvent recibido. Murió el jugador: " + deadPlayerActorNumber);
+            Debug.Log("RaiseEvent recibido. Muriï¿½ el jugador: " + deadPlayerActorNumber);
 
             OnAnyPlayerDeath?.Invoke(deadPlayerActorNumber);
         }
