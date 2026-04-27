@@ -307,6 +307,7 @@ MonoBehaviour:
   spearForwardTime: 0.12
   spearReturnTime: 0.18
   drawHitGizmo: 1
+  playerShield: {fileID: 0}
 --- !u!114 &4250494261043464333
 MonoBehaviour:
   m_ObjectHideFlags: 0
