@@ -20,10 +20,18 @@ public class PhotonManager : MonoBehaviourPunCallbacks
     [SerializeField] private TMP_InputField roomNameInput;
     [SerializeField] private byte maxPlayersAmount = 5;
 
-    [Header("UI")]
+    [Header("Panels")]
+    [SerializeField] private GameObject panelRoom;
+    [SerializeField] private GameObject panelLobby;
+
+    [Header("Lobby UI")]
+    [SerializeField] private GameObject startGameButton;
+    [SerializeField] private TMP_Text lobbyText;
     [SerializeField] private TMP_Text statusText;
 
     private Dictionary<string, RoomInfo> cachedRoomList = new Dictionary<string, RoomInfo>();
+
+    private bool backToMainMenu;
 
     private void Awake()
     {
@@ -31,6 +39,8 @@ public class PhotonManager : MonoBehaviourPunCallbacks
 
         PhotonNetwork.AutomaticallySyncScene = true;
         PhotonNetwork.ConnectUsingSettings();
+
+        ShowRoomPanel();
     }
 
     public override void OnConnectedToMaster()
@@ -69,7 +79,6 @@ public class PhotonManager : MonoBehaviourPunCallbacks
 
         roomOptions.PlayerTtl = 3000;
         roomOptions.EmptyRoomTtl = 60000;
-
         roomOptions.BroadcastPropsChangeToAll = true;
 
         SetStatus("Creando room: " + roomName);
@@ -111,10 +120,74 @@ public class PhotonManager : MonoBehaviourPunCallbacks
 
         OnRoom?.Invoke();
 
-        if (PhotonNetwork.IsMasterClient)
+        ShowLobbyPanel();
+        UpdateLobbyInfo();
+    }
+
+    public void StartGame()
+    {
+        if (!PhotonNetwork.IsMasterClient)
         {
-            PhotonNetwork.LoadLevel(gameSceneName);
+            Debug.LogWarning("Solo el Host puede iniciar la partida.");
+            return;
         }
+
+        PhotonNetwork.CurrentRoom.IsOpen = false;
+        PhotonNetwork.CurrentRoom.IsVisible = false;
+
+        PhotonNetwork.LoadLevel(gameSceneName);
+    }
+
+    public void BackToRoomMenu()
+    {
+        if (PhotonNetwork.InRoom)
+        {
+            PhotonNetwork.LeaveRoom();
+        }
+        else
+        {
+            ShowRoomPanel();
+        }
+    }
+
+    public void BackToMainMenu()
+    {
+        backToMainMenu = true;
+
+        if (PhotonNetwork.InRoom)
+        {
+            PhotonNetwork.LeaveRoom();
+            return;
+        }
+
+        SceneManager.LoadScene(mainMenuSceneName);
+    }
+
+    public override void OnLeftRoom()
+    {
+        if (backToMainMenu)
+        {
+            backToMainMenu = false;
+            SceneManager.LoadScene(mainMenuSceneName);
+            return;
+        }
+
+        ShowRoomPanel();
+    }
+
+    public override void OnPlayerEnteredRoom(Player newPlayer)
+    {
+        UpdateLobbyInfo();
+    }
+
+    public override void OnPlayerLeftRoom(Player otherPlayer)
+    {
+        UpdateLobbyInfo();
+    }
+
+    public override void OnMasterClientSwitched(Player newMasterClient)
+    {
+        UpdateLobbyInfo();
     }
 
     public override void OnRoomListUpdate(List<RoomInfo> roomList)
@@ -137,9 +210,53 @@ public class PhotonManager : MonoBehaviourPunCallbacks
         }
     }
 
-    public void BackToMainMenu()
+    private void ShowRoomPanel()
     {
-        SceneManager.LoadScene(mainMenuSceneName);
+        if (panelRoom != null)
+        {
+            panelRoom.SetActive(true);
+        }
+
+        if (panelLobby != null)
+        {
+            panelLobby.SetActive(false);
+        }
+    }
+
+    private void ShowLobbyPanel()
+    {
+        if (panelRoom != null)
+        {
+            panelRoom.SetActive(false);
+        }
+
+        if (panelLobby != null)
+        {
+            panelLobby.SetActive(true);
+        }
+    }
+
+    private void UpdateLobbyInfo()
+    {
+        if (!PhotonNetwork.InRoom)
+        {
+            return;
+        }
+
+        bool isHost = PhotonNetwork.IsMasterClient;
+
+        if (startGameButton != null)
+        {
+            startGameButton.SetActive(isHost);
+        }
+
+        if (lobbyText != null)
+        {
+            lobbyText.text =
+                "Room: " + PhotonNetwork.CurrentRoom.Name +
+                "\nPlayers: " + PhotonNetwork.CurrentRoom.PlayerCount + " / " + PhotonNetwork.CurrentRoom.MaxPlayers +
+                "\nHost: " + PhotonNetwork.MasterClient.NickName;
+        }
     }
 
     public override void OnCreateRoomFailed(short returnCode, string message)
