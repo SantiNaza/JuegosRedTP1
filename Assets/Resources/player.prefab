@@ -50,6 +50,8 @@ GameObject:
   - component: {fileID: 833333032946602272}
   - component: {fileID: -6976276446295328925}
   - component: {fileID: 5737264912898199106}
+  - component: {fileID: 4250494261043464333}
+  - component: {fileID: 5793153922603353488}
   m_Layer: 6
   m_Name: player
   m_TagString: Untagged
@@ -173,6 +175,7 @@ MonoBehaviour:
   observableSearch: 2
   ObservedComponents:
   - {fileID: 4086052838711031638}
+  - {fileID: 4250494261043464333}
   sceneViewId: 0
   InstantiationId: 0
   isRuntimeInstantiated: 0
@@ -269,6 +272,54 @@ MonoBehaviour:
   spearForwardTime: 0.12
   spearReturnTime: 0.18
   drawHitGizmo: 1
+--- !u!114 &4250494261043464333
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4086052838711031632}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8efc6b1d64977384eb3405357896c656, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_PositionModel:
+    SynchronizeEnabled: 1
+    TeleportEnabled: 1
+    TeleportIfDistanceGreaterThan: 3
+    InterpolateOption: 2
+    InterpolateMoveTowardsSpeed: 1
+    InterpolateLerpSpeed: 1
+    ExtrapolateOption: 0
+    ExtrapolateSpeed: 1
+    ExtrapolateIncludingRoundTripTime: 1
+    ExtrapolateNumberOfStoredPositions: 1
+  m_RotationModel:
+    SynchronizeEnabled: 1
+    InterpolateOption: 1
+    InterpolateRotateTowardsSpeed: 180
+    InterpolateLerpSpeed: 5
+  m_ScaleModel:
+    SynchronizeEnabled: 0
+    InterpolateOption: 0
+    InterpolateMoveTowardsSpeed: 1
+    InterpolateLerpSpeed: 0
+--- !u!114 &5793153922603353488
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4086052838711031632}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e35313bf6db628746ba0759be9794570, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mainCamera: {fileID: 0}
+  rotationSpeed: 20
+  instantRotation: 0
 --- !u!1 &7232849126796683245
 GameObject:
   m_ObjectHideFlags: 0
