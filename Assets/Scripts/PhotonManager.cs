@@ -18,7 +18,7 @@ public class PhotonManager : MonoBehaviourPunCallbacks
 
     [Header("Room Settings")]
     [SerializeField] private TMP_InputField roomNameInput;
-    [SerializeField] private byte maxPlayersAmount = 4;
+    [SerializeField] private byte maxPlayersAmount = 5;
 
     [Header("UI")]
     [SerializeField] private TMP_Text statusText;
