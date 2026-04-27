@@ -16,6 +16,8 @@ public class PlayerHealth : MonoBehaviourPun, IOnEventCallback
 
     [Header("References")]
     [SerializeField] private PlayerMovement playerMovement;
+    [SerializeField] private PlayerMouseAim playerMouseAim;
+    [SerializeField] private PlayerAttack playerAttack;
     [SerializeField] private Collider playerCollider;
     [SerializeField] private Rigidbody playerRigidbody;
 
@@ -32,6 +34,12 @@ public class PlayerHealth : MonoBehaviourPun, IOnEventCallback
 
         if (playerMovement == null)
             playerMovement = GetComponent<PlayerMovement>();
+
+        if (playerMouseAim == null)
+            playerMouseAim = GetComponent<PlayerMouseAim>();
+
+        if (playerAttack == null)
+            playerAttack = GetComponent<PlayerAttack>();
 
         if (playerCollider == null)
             playerCollider = GetComponent<Collider>();
@@ -68,19 +76,6 @@ public class PlayerHealth : MonoBehaviourPun, IOnEventCallback
         view.RPC("RPC_TakeDamage", RpcTarget.All, damage);
     }
 
-    public void Heal(float amount)
-    {
-        if (amount <= 0f)
-            return;
-
-        if (isDead)
-            return;
-
-        PhotonView view = PhotonView.Get(this);
-
-        view.RPC("RPC_Heal", RpcTarget.All, amount);
-    }
-
     [PunRPC]
     public void RPC_TakeDamage(float damage)
     {
@@ -98,18 +93,6 @@ public class PlayerHealth : MonoBehaviourPun, IOnEventCallback
         }
     }
 
-    [PunRPC]
-    public void RPC_Heal(float amount)
-    {
-        if (isDead)
-            return;
-
-        currentHealth += amount;
-        currentHealth = Mathf.Clamp(currentHealth, 0f, maxHealth);
-
-        Debug.Log("Vida actual: " + currentHealth);
-    }
-
     private void Die()
     {
         if (isDead)
@@ -124,6 +107,8 @@ public class PlayerHealth : MonoBehaviourPun, IOnEventCallback
         if (photonView.IsMine)
         {
             RaisePlayerDeathEvent();
+
+            PhotonNetwork.Destroy(gameObject);
         }
     }
 
@@ -131,6 +116,12 @@ public class PlayerHealth : MonoBehaviourPun, IOnEventCallback
     {
         if (playerMovement != null)
             playerMovement.enabled = false;
+
+        if (playerMouseAim != null)
+            playerMouseAim.enabled = false;
+
+        if (playerAttack != null)
+            playerAttack.enabled = false;
 
         if (playerCollider != null)
             playerCollider.enabled = false;
