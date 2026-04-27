@@ -32,6 +32,9 @@ public class PlayerHealth : MonoBehaviourPun, IOnEventCallback
     private void Awake()
     {
         currentHealth = maxHealth;
+        
+        if (healthBar == null)
+            healthBar = GetComponentInChildren<HealthBar>();
 
         if (playerMovement == null)
             playerMovement = GetComponent<PlayerMovement>();
