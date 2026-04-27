@@ -672,8 +672,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   simultaneousDeathWindow: 0.35
-  resultPanel: {fileID: 0}
-  resultText: {fileID: 0}
+  resultPanel: {fileID: 1501284918}
+  resultText: {fileID: 1045517172}
 --- !u!1 &1421483388
 GameObject:
   m_ObjectHideFlags: 0
@@ -792,7 +792,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1501284919
 RectTransform:
   m_ObjectHideFlags: 0

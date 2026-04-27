@@ -30,6 +30,16 @@ public class MatchManager : MonoBehaviourPunCallbacks, IOnEventCallback
     private bool matchEnded;
     private bool resultShown;
 
+    public override void OnEnable()
+    {
+        PhotonNetwork.AddCallbackTarget(this);
+    }
+
+    public override void OnDisable()
+    {
+        PhotonNetwork.RemoveCallbackTarget(this);
+    }
+
     private void Start()
     {
         if (resultPanel != null)
@@ -63,6 +73,8 @@ public class MatchManager : MonoBehaviourPunCallbacks, IOnEventCallback
 
             int deadPlayerActorNumber = (int)data[0];
 
+            Debug.Log("Evento recibido en MatchManager. Murió: " + deadPlayerActorNumber);
+
             RegisterPlayerDeath(deadPlayerActorNumber);
         }
 
@@ -72,6 +84,8 @@ public class MatchManager : MonoBehaviourPunCallbacks, IOnEventCallback
 
             int resultType = (int)data[0];
             int[] resultPlayers = (int[])data[1];
+
+            Debug.Log("Evento de final de partida recibido.");
 
             ShowMatchResult(resultType, resultPlayers);
         }
@@ -177,7 +191,8 @@ public class MatchManager : MonoBehaviourPunCallbacks, IOnEventCallback
 
         RaiseEventOptions raiseEventOptions = new RaiseEventOptions
         {
-            Receivers = ReceiverGroup.All
+            Receivers = ReceiverGroup.All,
+            CachingOption = EventCaching.AddToRoomCache
         };
 
         PhotonNetwork.RaiseEvent(
@@ -186,6 +201,8 @@ public class MatchManager : MonoBehaviourPunCallbacks, IOnEventCallback
             raiseEventOptions,
             SendOptions.SendReliable
         );
+
+        Debug.Log("Final de partida enviado a todos los jugadores de la sala.");
     }
 
     private void ShowMatchResult(int resultType, int[] resultPlayers)
