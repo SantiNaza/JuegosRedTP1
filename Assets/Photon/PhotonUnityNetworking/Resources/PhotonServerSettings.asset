@@ -42,6 +42,7 @@ MonoBehaviour:
   - RPC_Heal
   - RPC_TakeDamage
   - RPC_PlayAttack
+  - RPC_SetShieldActive
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 1

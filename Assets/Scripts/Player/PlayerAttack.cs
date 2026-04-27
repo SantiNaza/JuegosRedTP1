@@ -179,6 +179,23 @@ public class PlayerAttack : MonoBehaviourPun
                 continue;
             }
 
+            PlayerShield targetShield = targetHealth.GetComponent<PlayerShield>();
+
+            if (targetShield != null)
+            {
+                bool blocked = targetShield.TryBlockDamage(
+                    hit,
+                    hitPosition,
+                    transform.position
+                );
+
+                if (blocked)
+                {
+                    damagedPlayers.Add(targetHealth);
+                    continue;
+                }
+            }
+
             damagedPlayers.Add(targetHealth);
 
             targetHealth.TakeDamage(damage);
