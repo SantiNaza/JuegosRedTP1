@@ -24,6 +24,9 @@ public class PlayerAttack : MonoBehaviourPun
     [Header("Debug")]
     [SerializeField] private bool drawHitGizmo = true;
 
+    [Header("References")]
+    [SerializeField] private PlayerShield playerShield;
+
     private Vector3 spearStartLocalPosition;
     private bool isAttacking;
     private float nextAttackTime;
@@ -36,6 +39,10 @@ public class PlayerAttack : MonoBehaviourPun
         if (spearTransform != null)
         {
             spearStartLocalPosition = spearTransform.localPosition;
+        }
+        if (playerShield == null)
+        {
+            playerShield = GetComponent<PlayerShield>();
         }
     }
 
@@ -54,6 +61,11 @@ public class PlayerAttack : MonoBehaviourPun
 
     private void TryAttack()
     {
+        if (playerShield != null && playerShield.IsShieldActive)
+        {
+            return;
+        }
+
         if (isAttacking)
         {
             return;
