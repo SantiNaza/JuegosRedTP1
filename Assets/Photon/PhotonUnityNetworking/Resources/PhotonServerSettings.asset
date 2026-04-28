@@ -43,6 +43,10 @@ MonoBehaviour:
   - RPC_TakeDamage
   - RPC_PlayAttack
   - RPC_SetShieldActive
+  - RPC_RequestRestartMatch
+  - RPC_RequestReturnToRoomMenu
+  - RPC_RestartMatchForAll
+  - RPC_ReturnToRoomMenuForAll
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 1

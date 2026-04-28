@@ -7,13 +7,11 @@ using Photon.Pun;
 using Photon.Realtime;
 using ExitGames.Client.Photon;
 
+[RequireComponent(typeof(PhotonView))]
 public class MatchManager : MonoBehaviourPunCallbacks, IOnEventCallback
 {
     private const byte PlayerDeathEventCode = 1;
     private const byte MatchEndEventCode = 2;
-
-    private const byte RestartMatchRequestEventCode = 3;
-    private const byte ReturnToRoomMenuEventCode = 4;
 
     private const int WinnerResult = 0;
     private const int DrawResult = 1;
@@ -37,7 +35,10 @@ public class MatchManager : MonoBehaviourPunCallbacks, IOnEventCallback
     private bool isResolvingMatch;
     private bool matchEnded;
     private bool resultShown;
-    private bool loadingRoomMenu;
+
+    private bool returningToRoomMenu;
+    private bool alreadyReturningToRoomMenu;
+    private bool alreadyRestarting;
 
     public override void OnEnable()
     {
@@ -99,19 +100,6 @@ public class MatchManager : MonoBehaviourPunCallbacks, IOnEventCallback
             Debug.Log("Evento de final de partida recibido.");
 
             ShowMatchResult(resultType, resultPlayers);
-        }
-
-        if (eventCode == RestartMatchRequestEventCode)
-        {
-            if (PhotonNetwork.IsMasterClient)
-            {
-                RestartMatchAsMaster();
-            }
-        }
-
-        if (eventCode == ReturnToRoomMenuEventCode)
-        {
-            StartCoroutine(LeaveRoomAndLoadRoomMenu());
         }
     }
 
@@ -215,8 +203,7 @@ public class MatchManager : MonoBehaviourPunCallbacks, IOnEventCallback
 
         RaiseEventOptions raiseEventOptions = new RaiseEventOptions
         {
-            Receivers = ReceiverGroup.All,
-            CachingOption = EventCaching.AddToRoomCache
+            Receivers = ReceiverGroup.All
         };
 
         PhotonNetwork.RaiseEvent(
@@ -273,75 +260,130 @@ public class MatchManager : MonoBehaviourPunCallbacks, IOnEventCallback
 
     public void RestartMatch()
     {
-        if (PhotonNetwork.IsMasterClient)
+        if (!PhotonNetwork.InRoom)
         {
-            RestartMatchAsMaster();
+            SceneManager.LoadScene(gameplaySceneName);
             return;
         }
 
-        RaiseEventOptions raiseEventOptions = new RaiseEventOptions
+        if (PhotonNetwork.IsMasterClient)
         {
-            Receivers = ReceiverGroup.MasterClient
-        };
-
-        PhotonNetwork.RaiseEvent(
-            RestartMatchRequestEventCode,
-            null,
-            raiseEventOptions,
-            SendOptions.SendReliable
-        );
+            SendRestartMatchToAll();
+        }
+        else
+        {
+            photonView.RPC(nameof(RPC_RequestRestartMatch), RpcTarget.MasterClient);
+        }
     }
 
-    private void RestartMatchAsMaster()
+    [PunRPC]
+    private void RPC_RequestRestartMatch()
     {
-        Debug.Log("Reiniciando partida para todos los jugadores.");
-
-        if (PhotonNetwork.CurrentRoom != null)
+        if (!PhotonNetwork.IsMasterClient)
         {
-            PhotonNetwork.CurrentRoom.IsOpen = false;
-            PhotonNetwork.CurrentRoom.IsVisible = false;
+            return;
         }
 
-        PhotonNetwork.LoadLevel(gameplaySceneName);
+        SendRestartMatchToAll();
+    }
+
+    private void SendRestartMatchToAll()
+    {
+        photonView.RPC(nameof(RPC_RestartMatchForAll), RpcTarget.All);
+        PhotonNetwork.SendAllOutgoingCommands();
+    }
+
+    [PunRPC]
+    private void RPC_RestartMatchForAll()
+    {
+        if (alreadyRestarting)
+        {
+            return;
+        }
+
+        alreadyRestarting = true;
+
+        Time.timeScale = 1f;
+
+        Debug.Log("Reiniciando partida en cliente: " + PhotonNetwork.LocalPlayer.ActorNumber);
+
+        SceneManager.LoadScene(gameplaySceneName);
     }
 
     public void ReturnToRoomMenu()
     {
-        RaiseEventOptions raiseEventOptions = new RaiseEventOptions
+        if (!PhotonNetwork.InRoom)
         {
-            Receivers = ReceiverGroup.All
-        };
+            SceneManager.LoadScene(roomMenuSceneName);
+            return;
+        }
 
-        PhotonNetwork.RaiseEvent(
-            ReturnToRoomMenuEventCode,
-            null,
-            raiseEventOptions,
-            SendOptions.SendReliable
-        );
+        if (PhotonNetwork.IsMasterClient)
+        {
+            SendReturnToRoomMenuToAll();
+        }
+        else
+        {
+            photonView.RPC(nameof(RPC_RequestReturnToRoomMenu), RpcTarget.MasterClient);
+        }
+    }
+
+    [PunRPC]
+    private void RPC_RequestReturnToRoomMenu()
+    {
+        if (!PhotonNetwork.IsMasterClient)
+        {
+            return;
+        }
+
+        SendReturnToRoomMenuToAll();
+    }
+
+    private void SendReturnToRoomMenuToAll()
+    {
+        photonView.RPC(nameof(RPC_ReturnToRoomMenuForAll), RpcTarget.All);
+        PhotonNetwork.SendAllOutgoingCommands();
+    }
+
+    [PunRPC]
+    private void RPC_ReturnToRoomMenuForAll()
+    {
+        if (alreadyReturningToRoomMenu)
+        {
+            return;
+        }
+
+        alreadyReturningToRoomMenu = true;
+
+        Debug.Log("Volviendo al RoomMenu en cliente: " + PhotonNetwork.LocalPlayer.ActorNumber);
+
+        StartCoroutine(LeaveRoomAndLoadRoomMenu());
     }
 
     private IEnumerator LeaveRoomAndLoadRoomMenu()
     {
-        if (loadingRoomMenu)
-        {
-            yield break;
-        }
+        Time.timeScale = 1f;
 
-        loadingRoomMenu = true;
+        returningToRoomMenu = true;
 
-        Debug.Log("Volviendo al RoomMenu para todos los jugadores.");
+        yield return new WaitForSeconds(0.15f);
 
         if (PhotonNetwork.InRoom)
         {
             PhotonNetwork.LeaveRoom();
-
-            while (PhotonNetwork.InRoom)
-            {
-                yield return null;
-            }
         }
+        else
+        {
+            SceneManager.LoadScene(roomMenuSceneName);
+        }
+    }
 
-        SceneManager.LoadScene(roomMenuSceneName);
+    public override void OnLeftRoom()
+    {
+        if (returningToRoomMenu)
+        {
+            SceneManager.LoadScene(roomMenuSceneName);
+        }
     }
 
     private string GetPlayerName(int actorNumber)
