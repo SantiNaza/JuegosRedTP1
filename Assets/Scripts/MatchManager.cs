@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using TMPro;
 using Photon.Pun;
 using Photon.Realtime;
@@ -11,8 +12,15 @@ public class MatchManager : MonoBehaviourPunCallbacks, IOnEventCallback
     private const byte PlayerDeathEventCode = 1;
     private const byte MatchEndEventCode = 2;
 
+    private const byte RestartMatchRequestEventCode = 3;
+    private const byte ReturnToRoomMenuEventCode = 4;
+
     private const int WinnerResult = 0;
     private const int DrawResult = 1;
+
+    [Header("Scenes")]
+    [SerializeField] private string gameplaySceneName = "Gameplay";
+    [SerializeField] private string roomMenuSceneName = "RoomMenu";
 
     [Header("Match Settings")]
     [SerializeField] private float simultaneousDeathWindow = 0.35f;
@@ -29,6 +37,7 @@ public class MatchManager : MonoBehaviourPunCallbacks, IOnEventCallback
     private bool isResolvingMatch;
     private bool matchEnded;
     private bool resultShown;
+    private bool loadingRoomMenu;
 
     public override void OnEnable()
     {
@@ -42,6 +51,8 @@ public class MatchManager : MonoBehaviourPunCallbacks, IOnEventCallback
 
     private void Start()
     {
+        PhotonNetwork.AutomaticallySyncScene = true;
+
         if (resultPanel != null)
         {
             resultPanel.SetActive(false);
@@ -88,6 +99,19 @@ public class MatchManager : MonoBehaviourPunCallbacks, IOnEventCallback
             Debug.Log("Evento de final de partida recibido.");
 
             ShowMatchResult(resultType, resultPlayers);
+        }
+
+        if (eventCode == RestartMatchRequestEventCode)
+        {
+            if (PhotonNetwork.IsMasterClient)
+            {
+                RestartMatchAsMaster();
+            }
+        }
+
+        if (eventCode == ReturnToRoomMenuEventCode)
+        {
+            StartCoroutine(LeaveRoomAndLoadRoomMenu());
         }
     }
 
@@ -245,6 +269,79 @@ public class MatchManager : MonoBehaviourPunCallbacks, IOnEventCallback
                 }
             }
         }
+    }
+
+    public void RestartMatch()
+    {
+        if (PhotonNetwork.IsMasterClient)
+        {
+            RestartMatchAsMaster();
+            return;
+        }
+
+        RaiseEventOptions raiseEventOptions = new RaiseEventOptions
+        {
+            Receivers = ReceiverGroup.MasterClient
+        };
+
+        PhotonNetwork.RaiseEvent(
+            RestartMatchRequestEventCode,
+            null,
+            raiseEventOptions,
+            SendOptions.SendReliable
+        );
+    }
+
+    private void RestartMatchAsMaster()
+    {
+        Debug.Log("Reiniciando partida para todos los jugadores.");
+
+        if (PhotonNetwork.CurrentRoom != null)
+        {
+            PhotonNetwork.CurrentRoom.IsOpen = false;
+            PhotonNetwork.CurrentRoom.IsVisible = false;
+        }
+
+        PhotonNetwork.LoadLevel(gameplaySceneName);
+    }
+
+    public void ReturnToRoomMenu()
+    {
+        RaiseEventOptions raiseEventOptions = new RaiseEventOptions
+        {
+            Receivers = ReceiverGroup.All
+        };
+
+        PhotonNetwork.RaiseEvent(
+            ReturnToRoomMenuEventCode,
+            null,
+            raiseEventOptions,
+            SendOptions.SendReliable
+        );
+    }
+
+    private IEnumerator LeaveRoomAndLoadRoomMenu()
+    {
+        if (loadingRoomMenu)
+        {
+            yield break;
+        }
+
+        loadingRoomMenu = true;
+
+        Debug.Log("Volviendo al RoomMenu para todos los jugadores.");
+
+        if (PhotonNetwork.InRoom)
+        {
+            PhotonNetwork.LeaveRoom();
+
+            while (PhotonNetwork.InRoom)
+            {
+                yield return null;
+            }
+        }
+
+        SceneManager.LoadScene(roomMenuSceneName);
     }
 
     private string GetPlayerName(int actorNumber)
