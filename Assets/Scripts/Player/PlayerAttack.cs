@@ -86,6 +86,11 @@ public class PlayerAttack : MonoBehaviourPun
     [PunRPC]
     private void RPC_PlayAttack()
     {
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayPlayerAttack();
+        }
+
         if (spearTransform == null)
         {
             Debug.LogWarning("No hay Spear Transform asignado en PlayerAttack.");

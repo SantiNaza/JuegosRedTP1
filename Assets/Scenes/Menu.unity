@@ -135,6 +135,7 @@ GameObject:
   - component: {fileID: 100980221}
   - component: {fileID: 100980220}
   - component: {fileID: 100980219}
+  - component: {fileID: 100980222}
   m_Layer: 5
   m_Name: Quit
   m_TagString: Untagged
@@ -257,6 +258,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 100980217}
   m_CullTransparentMesh: 1
+--- !u!114 &100980222
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100980217}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7b7faefa5e67e6c468d07a349c2cc55d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &153853220
 GameObject:
   m_ObjectHideFlags: 0
@@ -342,7 +355,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 26.9
+  m_fontSize: 37.85
   m_fontSizeBase: 24
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -666,6 +679,55 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 558299133}
   m_CullTransparentMesh: 1
+--- !u!1 &782338702
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 782338704}
+  - component: {fileID: 782338703}
+  m_Layer: 0
+  m_Name: AudioManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &782338703
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 782338702}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cb8ee3bada78cc143af87974c0c18278, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  menuMusic: {fileID: 8300000, guid: e09dc5a0090d9b941894adfc966e68a3, type: 3}
+  roomMenuMusic: {fileID: 8300000, guid: e09dc5a0090d9b941894adfc966e68a3, type: 3}
+  gameplayMusic: {fileID: 8300000, guid: 99df5c4f5ec100b41a357685533add66, type: 3}
+  buttonClick: {fileID: 8300000, guid: 26554b77e70b4344a974664e0865b280, type: 3}
+  playerAttack: {fileID: 8300000, guid: 3a405295f886dc544b89d7aef6e23bec, type: 3}
+--- !u!4 &782338704
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 782338702}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -1.0943327, y: -1.2830172, z: -0.48324108}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 5
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1213282065
 GameObject:
   m_ObjectHideFlags: 0
@@ -754,6 +816,7 @@ GameObject:
   - component: {fileID: 1250806247}
   - component: {fileID: 1250806246}
   - component: {fileID: 1250806245}
+  - component: {fileID: 1250806248}
   m_Layer: 5
   m_Name: Play
   m_TagString: Untagged
@@ -876,6 +939,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1250806243}
   m_CullTransparentMesh: 1
+--- !u!114 &1250806248
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1250806243}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7b7faefa5e67e6c468d07a349c2cc55d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1409112804
 GameObject:
   m_ObjectHideFlags: 0
@@ -1029,7 +1104,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 26.9
+  m_fontSize: 38.65
   m_fontSizeBase: 24
   m_fontWeight: 400
   m_enableAutoSizing: 1

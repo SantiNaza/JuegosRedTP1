@@ -63,6 +63,8 @@ public class PhotonManager : MonoBehaviourPunCallbacks
             return;
         }
 
+        AudioManager.Instance.PlayButtonClick();
+
         string roomName = GetRoomName();
 
         if (string.IsNullOrEmpty(roomName))
@@ -94,6 +96,8 @@ public class PhotonManager : MonoBehaviourPunCallbacks
             return;
         }
 
+        AudioManager.Instance.PlayButtonClick();
+
         string roomName = GetRoomName();
 
         if (string.IsNullOrEmpty(roomName))
@@ -109,6 +113,7 @@ public class PhotonManager : MonoBehaviourPunCallbacks
 
     public override void OnJoinedRoom()
     {
+
         string roomName = PhotonNetwork.CurrentRoom.Name;
         int playerCount = PhotonNetwork.CurrentRoom.PlayerCount;
 
@@ -142,6 +147,7 @@ public class PhotonManager : MonoBehaviourPunCallbacks
     {
         if (PhotonNetwork.InRoom)
         {
+            AudioManager.Instance.PlayButtonClick();
             PhotonNetwork.LeaveRoom();
         }
         else
@@ -156,6 +162,7 @@ public class PhotonManager : MonoBehaviourPunCallbacks
 
         if (PhotonNetwork.InRoom)
         {
+            AudioManager.Instance.PlayButtonClick();
             PhotonNetwork.LeaveRoom();
             return;
         }
