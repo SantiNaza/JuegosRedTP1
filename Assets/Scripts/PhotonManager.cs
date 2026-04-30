@@ -29,6 +29,10 @@ public class PhotonManager : MonoBehaviourPunCallbacks
     [SerializeField] private TMP_Text lobbyText;
     [SerializeField] private TMP_Text statusText;
 
+    [Header("Room List UI")]
+    [SerializeField] private Transform roomListContent;
+    [SerializeField] private GameObject roomItemPrefab;
+
     private Dictionary<string, RoomInfo> cachedRoomList = new Dictionary<string, RoomInfo>();
 
     private bool backToMainMenu;
@@ -215,6 +219,44 @@ public class PhotonManager : MonoBehaviourPunCallbacks
                 cachedRoomList[info.Name] = info;
             }
         }
+
+        // ESTO ES NUEVO: Después de actualizar los datos, dibujamos la UI
+        UpdateRoomListView();
+    }
+
+    private void UpdateRoomListView()
+    {
+        // 1. Limpiamos la lista visual vieja para no duplicar botones
+        foreach (Transform child in roomListContent)
+        {
+            Destroy(child.gameObject);
+        }
+
+        // 2. Por cada room en nuestro diccionario, creamos un botón nuevo
+        foreach (RoomInfo info in cachedRoomList.Values)
+        {
+            // Filtramos las que están cerradas, invisibles o borradas
+            if (!info.IsOpen || !info.IsVisible || info.RemovedFromList)
+                continue;
+
+            // Instanciamos el prefab adentro del contenedor
+            GameObject item = Instantiate(roomItemPrefab, roomListContent);
+
+            // Le pasamos la info al script del botón
+            item.GetComponent<RoomItem>().Setup(info);
+        }
+    }
+
+    public void JoinSpecificRoom(string specificRoomName)
+    {
+        if (!PhotonNetwork.IsConnectedAndReady)
+        {
+            SetStatus("Todavía no estás conectado.");
+            return;
+        }
+
+        SetStatus("Entrando a room: " + specificRoomName);
+        PhotonNetwork.JoinRoom(specificRoomName);
     }
 
     private void ShowRoomPanel()
