@@ -27,6 +27,11 @@ public class MatchManager : MonoBehaviourPunCallbacks, IOnEventCallback
     [SerializeField] private GameObject resultPanel;
     [SerializeField] private TMP_Text resultText;
 
+    [Header("Notifications UI")]
+    [SerializeField] private TMP_Text notificationText;
+    [SerializeField] private float notificationDuration = 3f;
+    private Coroutine notificationCoroutine;
+
     private HashSet<int> alivePlayers = new HashSet<int>();
     private HashSet<int> deadPlayers = new HashSet<int>();
 
@@ -117,6 +122,8 @@ public class MatchManager : MonoBehaviourPunCallbacks, IOnEventCallback
 
         deadPlayers.Add(deadPlayerActorNumber);
         alivePlayers.Remove(deadPlayerActorNumber);
+
+        ShowNotification(GetPlayerName(deadPlayerActorNumber) + " fue eliminado.");
 
         Debug.Log("Murió jugador: " + deadPlayerActorNumber);
         Debug.Log("Jugadores vivos restantes: " + alivePlayers.Count);
@@ -405,6 +412,9 @@ public class MatchManager : MonoBehaviourPunCallbacks, IOnEventCallback
 
     public override void OnPlayerLeftRoom(Player otherPlayer)
     {
+        string playerName = string.IsNullOrEmpty(otherPlayer.NickName) ? "Jugador " + otherPlayer.ActorNumber : otherPlayer.NickName;
+        ShowNotification(playerName + " se desconectó de la partida.");
+
         if (matchEnded)
         {
             return;
@@ -439,5 +449,26 @@ public class MatchManager : MonoBehaviourPunCallbacks, IOnEventCallback
         {
             StartCoroutine(ResolveMatchAfterDelay());
         }
+    }
+
+    private void ShowNotification(string message)
+    {
+        if (notificationText == null) return;
+
+        if (notificationCoroutine != null)
+        {
+            StopCoroutine(notificationCoroutine);
+        }
+        notificationCoroutine = StartCoroutine(NotificationRoutine(message));
+    }
+
+    private IEnumerator NotificationRoutine(string message)
+    {
+        notificationText.text = message;
+        notificationText.gameObject.SetActive(true);
+
+        yield return new WaitForSeconds(notificationDuration);
+
+        notificationText.gameObject.SetActive(false);
     }
 }
