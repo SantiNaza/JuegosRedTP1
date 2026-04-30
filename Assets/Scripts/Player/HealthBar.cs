@@ -7,14 +7,24 @@ public class HealthBar : MonoBehaviour
     public Transform target;
     public Vector3 offset = new Vector3(0, 2f, 0);
 
-    void Update()
+    private Transform cam;
+
+    private void Start()
+    {
+        cam = Camera.main.transform;
+    }
+
+    void LateUpdate()
     {
         if (target != null)
         {
             transform.position = target.position + offset;
         }
 
-        transform.forward = Camera.main.transform.forward;
+        if (cam == null) return;
+
+        // Hace que mire EXACTAMENTE como la cámara (sin rotaciones raras)
+        transform.rotation = cam.rotation;
     }
 
     public void SetHealth(float current, float max)
