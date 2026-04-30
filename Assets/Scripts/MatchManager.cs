@@ -30,6 +30,17 @@ public class MatchManager : MonoBehaviourPunCallbacks, IOnEventCallback
     [Header("Notifications UI")]
     [SerializeField] private TMP_Text notificationText;
     [SerializeField] private float notificationDuration = 3f;
+
+    [SerializeField]
+    private Color[] playerColors = new Color[5]
+    {
+        Color.green,
+        Color.red,
+        Color.blue,
+        Color.yellow,
+        Color.black
+    };
+
     private Coroutine notificationCoroutine;
 
     private HashSet<int> alivePlayers = new HashSet<int>();
@@ -123,7 +134,9 @@ public class MatchManager : MonoBehaviourPunCallbacks, IOnEventCallback
         deadPlayers.Add(deadPlayerActorNumber);
         alivePlayers.Remove(deadPlayerActorNumber);
 
-        ShowNotification(GetPlayerName(deadPlayerActorNumber) + " fue eliminado.");
+        string playerName = GetPlayerName(deadPlayerActorNumber);
+        string colorHex = GetPlayerColorHex(deadPlayerActorNumber);
+        ShowNotification($"<color=#{colorHex}>{playerName}</color> fue eliminado.");
 
         Debug.Log("Murió jugador: " + deadPlayerActorNumber);
         Debug.Log("Jugadores vivos restantes: " + alivePlayers.Count);
@@ -410,10 +423,21 @@ public class MatchManager : MonoBehaviourPunCallbacks, IOnEventCallback
         return player.NickName;
     }
 
+    private string GetPlayerColorHex(int actorNumber)
+    {
+        int playerIndex = actorNumber - 1;
+
+        if (playerIndex < 0) playerIndex = 0;
+        if (playerIndex >= playerColors.Length) playerIndex = playerColors.Length - 1;
+
+        return ColorUtility.ToHtmlStringRGB(playerColors[playerIndex]);
+    }
+
     public override void OnPlayerLeftRoom(Player otherPlayer)
     {
         string playerName = string.IsNullOrEmpty(otherPlayer.NickName) ? "Jugador " + otherPlayer.ActorNumber : otherPlayer.NickName;
-        ShowNotification(playerName + " se desconectó de la partida.");
+        string colorHex = GetPlayerColorHex(otherPlayer.ActorNumber);
+        ShowNotification($"<color=#{colorHex}>{playerName}</color> se desconectó de la partida.");
 
         if (matchEnded)
         {
