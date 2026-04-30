@@ -280,15 +280,21 @@ public class MatchManager : MonoBehaviourPunCallbacks, IOnEventCallback
 
     public void RestartMatch()
     {
+        if (alreadyRestarting) return;
+
+        Time.timeScale = 1f;
+
         if (!PhotonNetwork.InRoom)
         {
+            alreadyRestarting = true;
             SceneManager.LoadScene(gameplaySceneName);
             return;
         }
 
         if (PhotonNetwork.IsMasterClient)
         {
-            SendRestartMatchToAll();
+            alreadyRestarting = true;
+            PhotonNetwork.LoadLevel(gameplaySceneName);
         }
         else
         {
@@ -300,11 +306,13 @@ public class MatchManager : MonoBehaviourPunCallbacks, IOnEventCallback
     private void RPC_RequestRestartMatch()
     {
         if (!PhotonNetwork.IsMasterClient)
-        {
             return;
-        }
 
-        SendRestartMatchToAll();
+        if (alreadyRestarting) return;
+
+        alreadyRestarting = true;
+        Time.timeScale = 1f;
+        PhotonNetwork.LoadLevel(gameplaySceneName);
     }
 
     private void SendRestartMatchToAll()
