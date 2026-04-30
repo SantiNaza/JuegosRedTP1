@@ -378,6 +378,8 @@ MonoBehaviour:
   showOnlyWhenActive: 0
   useSideCheck: 0
   minSideDot: 0.2
+  activeRotationOffset: {x: 15, y: 30, z: -30}
+  animationDuration: 0.15
 --- !u!1 &4206042060049184047
 GameObject:
   m_ObjectHideFlags: 0

@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using Photon.Pun;
 using Photon.Realtime;
@@ -20,8 +21,14 @@ public class PlayerShield : MonoBehaviourPun
     [SerializeField] private bool useSideCheck = false;
     [SerializeField] private float minSideDot = 0.2f;
 
+    [Header("Animation Settings")]
+    [SerializeField] private Vector3 activeRotationOffset = new Vector3(0f, 0f, 30f);
+    [SerializeField] private float animationDuration = 0.15f;
+
     private PlayerHealth playerHealth;
     private bool isShieldActive;
+    private Quaternion initialLocalRotation;
+    private Coroutine animationCoroutine;
 
     public bool IsShieldActive => isShieldActive;
 
@@ -37,6 +44,11 @@ public class PlayerShield : MonoBehaviourPun
         if (shieldTransform == null && shieldObject != null)
         {
             shieldTransform = shieldObject.transform;
+        }
+
+        if (shieldTransform != null)
+        {
+            initialLocalRotation = shieldTransform.localRotation;
         }
 
         ApplyShieldState();
@@ -101,6 +113,35 @@ public class PlayerShield : MonoBehaviourPun
         {
             shieldCollider.enabled = isShieldActive;
         }
+
+        if (shieldTransform != null && gameObject.activeInHierarchy)
+        {
+            if (animationCoroutine != null)
+            {
+                StopCoroutine(animationCoroutine);
+            }
+            animationCoroutine = StartCoroutine(AnimateShieldRotation(isShieldActive));
+        }
+    }
+
+    private IEnumerator AnimateShieldRotation(bool isActivating)
+    {
+        Quaternion startRot = shieldTransform.localRotation;
+        Quaternion targetRot = isActivating ? initialLocalRotation * Quaternion.Euler(activeRotationOffset) : initialLocalRotation;
+
+        float elapsed = 0f;
+
+        while (elapsed < animationDuration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / animationDuration;
+            t = Mathf.SmoothStep(0f, 1f, t);
+
+            shieldTransform.localRotation = Quaternion.Slerp(startRot, targetRot, t);
+            yield return null;
+        }
+
+        shieldTransform.localRotation = targetRot;
     }
 
     public bool TryBlockDamage(Collider hitCollider, Vector3 attackPoint, Vector3 attackerPosition)
