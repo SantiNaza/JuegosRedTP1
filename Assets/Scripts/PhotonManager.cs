@@ -274,8 +274,23 @@ public class PhotonManager : MonoBehaviourPunCallbacks
 
     public override void OnJoinRoomFailed(short returnCode, string message)
     {
-        SetStatus("No se pudo entrar a la room: " + message);
-        Debug.LogWarning("Join Room Failed: " + message);
+        switch (returnCode)
+        {
+            case ErrorCode.GameFull:
+                SetStatus("Partida llena");
+                break;
+            case ErrorCode.GameDoesNotExist:
+                SetStatus("Partida no encontrada");
+                break;
+            case ErrorCode.GameClosed:
+                SetStatus("Partida en curso");
+                break;
+            default:
+                SetStatus("No se pudo entrar a la room: " + message);
+                break;
+        }
+
+        Debug.LogWarning("Join Room Failed (" + returnCode + "): " + message);
     }
 
     public override void OnDisconnected(DisconnectCause cause)
