@@ -47,6 +47,9 @@ MonoBehaviour:
   - RPC_RequestReturnToRoomMenu
   - RPC_RestartMatchForAll
   - RPC_ReturnToRoomMenuForAll
+  - RPC_NotifyMasterOfHit
+  - RPC_RequestMasterToShoot
+  - RPC_UpdateUI
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 1

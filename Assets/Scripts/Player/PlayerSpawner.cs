@@ -20,7 +20,7 @@ public class PlayerSpawner : MonoBehaviour
         }
         else
         {
-            PhotonManager.instance.OnRoom += SpawnPlayer;
+            PhotonManager.Instance.OnRoom += SpawnPlayer;
         }
     }
 
@@ -67,9 +67,9 @@ public class PlayerSpawner : MonoBehaviour
 
     private void OnDestroy()
     {
-        if (PhotonManager.instance != null)
+        if (PhotonManager.Instance != null)
         {
-            PhotonManager.instance.OnRoom -= SpawnPlayer;
+            PhotonManager.Instance.OnRoom -= SpawnPlayer;
         }
     }
 }
