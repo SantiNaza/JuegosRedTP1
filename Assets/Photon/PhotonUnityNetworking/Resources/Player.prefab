@@ -532,9 +532,13 @@ GameObject:
   - component: {fileID: 6884107002733008094}
   - component: {fileID: 4168378253786963734}
   - component: {fileID: 5180643711351041223}
-  m_Layer: 0
+  - component: {fileID: 8689300952077248218}
+  - component: {fileID: 6536455345681546558}
+  - component: {fileID: 2368473593385675097}
+  - component: {fileID: 5445279296785784128}
+  m_Layer: 6
   m_Name: Player
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -616,7 +620,7 @@ CapsuleCollider:
   m_GameObject: {fileID: 8367049372155576086}
   m_Material: {fileID: 0}
   m_IsTrigger: 0
-  m_Enabled: 0
+  m_Enabled: 1
   m_Radius: 0.5
   m_Height: 2
   m_Direction: 1
@@ -677,6 +681,74 @@ MonoBehaviour:
     InterpolateOption: 0
     InterpolateMoveTowardsSpeed: 1
     InterpolateLerpSpeed: 0
+--- !u!54 &8689300952077248218
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8367049372155576086}
+  serializedVersion: 2
+  m_Mass: 1
+  m_Drag: 0
+  m_AngularDrag: 0.05
+  m_UseGravity: 1
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
+--- !u!114 &6536455345681546558
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8367049372155576086}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 05516d107327a944faf0e75885de9c1a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxHealth: 100
+  destroyOnDeath: 1
+--- !u!114 &2368473593385675097
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8367049372155576086}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bab53e64df4a1f542973b67047f9ac96, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  moveSpeed: 5
+  jumpForce: 0
+  groundCheckDistance: 1.1
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 8
+--- !u!114 &5445279296785784128
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8367049372155576086}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9c038f31e6350ad44ac063529ba79da0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  bulletPrefabName: Bullet
+  gunDamage: 50
+  fireRate: 0.5
+  firePoint: {fileID: 6794958718673616309}
+  meleeDamage: 50
+  meleeRange: 2
+  meleeCooldown: 1
+  mainCamera: {fileID: 0}
 --- !u!1 &8827059208307967625
 GameObject:
   m_ObjectHideFlags: 0
