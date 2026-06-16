@@ -52,6 +52,7 @@ MonoBehaviour:
   - RPC_UpdateUI
   - RPC_EnterDownedState
   - RPC_Revive
+  - RPC_ApplyKnockback
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 1
