@@ -711,6 +711,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 100
   destroyOnDeath: 1
+  isPlayer: 1
+  isDowned: 0
+  timeRequiredToRevive: 5
+  reviveRadius: 2
 --- !u!114 &2368473593385675097
 MonoBehaviour:
   m_ObjectHideFlags: 0

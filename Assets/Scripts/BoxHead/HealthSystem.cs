@@ -5,45 +5,160 @@ public class HealthSystem : MonoBehaviourPun
 {
     public float maxHealth = 100f;
     private float currentHealth;
-    
-    // Si es true, el objeto se destruye al llegar a 0 (ej. Cajas, Zombies)
-    public bool destroyOnDeath = true; 
+    public bool destroyOnDeath = true;
+
+    [Header("Configuración de Jugador (Revivir)")]
+    public bool isPlayer = false; // Marcar en TRUE solo en el Prefab del jugador
+    public bool isDowned = false;
+    private float bleedOutTimer = 30f;
+    private float reviveTimer = 0f;
+    public float timeRequiredToRevive = 5f;
+    public float reviveRadius = 2f; // Distancia a la que debe estar el compañero
 
     void Start()
     {
         currentHealth = maxHealth;
     }
 
-    // Este método lo llamará el jugador al disparar o golpear
+    void Update()
+    {
+        // Solo el dueño del jugador procesa sus propios contadores
+        if (!photonView.IsMine) return;
+
+        if (isPlayer && isDowned)
+        {
+            // 1. Lógica de desangrado (30 segundos)
+            bleedOutTimer -= Time.deltaTime;
+            if (bleedOutTimer <= 0)
+            {
+                Die(); // Pasaron 30 segundos, muere definitivamente
+                return;
+            }
+
+            // 2. Lógica de ser revivido
+            CheckForRevive();
+        }
+    }
+
     [PunRPC]
     public void RPC_TakeDamage(float damage)
     {
+        // Si el jugador ya está en el piso, ignoramos más daño
+        if (isDowned) return; 
+
         currentHealth -= damage;
-        
-        // Aquí podrías disparar un evento de Wwise 2021 si necesitas un sonido de impacto
-        // AkSoundEngine.PostEvent("Play_Impact", gameObject);
 
         if (currentHealth <= 0)
         {
-            Die();
+            if (isPlayer)
+            {
+                // Entramos en estado "Caído" en todas las pantallas
+                photonView.RPC("RPC_EnterDownedState", RpcTarget.All);
+            }
+            else
+            {
+                // Es un zombie o caja, muere directo
+                Die();
+            }
+        }
+    }
+
+    [PunRPC]
+    private void RPC_EnterDownedState()
+    {
+        isDowned = true;
+        bleedOutTimer = 30f;
+        reviveTimer = 0f;
+
+        // Visual: Acostamos al personaje en el piso
+        transform.eulerAngles = new Vector3(90f, transform.eulerAngles.y, transform.eulerAngles.z);
+
+        // Desactivamos el movimiento y el disparo para el dueño
+        if (photonView.IsMine)
+        {
+            GetComponent<PlayerMovement>().enabled = false;
+            GetComponent<TopDownWeaponController>().enabled = false;
+        }
+    }
+
+    private void CheckForRevive()
+    {
+        bool isBeingRevived = false;
+
+        // Buscamos si hay otro jugador parado muy cerca
+        Collider[] colliders = Physics.OverlapSphere(transform.position, reviveRadius);
+        foreach (Collider col in colliders)
+        {
+            if (col.CompareTag("Player") && col.gameObject != this.gameObject)
+            {
+                HealthSystem allyHealth = col.GetComponent<HealthSystem>();
+                
+                // Si encontramos a un aliado y NO está caído también
+                if (allyHealth != null && !allyHealth.isDowned)
+                {
+                    isBeingRevived = true;
+                    break;
+                }
+            }
+        }
+
+        // Si el compañero está encima, sumamos tiempo
+        if (isBeingRevived)
+        {
+            reviveTimer += Time.deltaTime;
+            
+            if (reviveTimer >= timeRequiredToRevive)
+            {
+                // ¡Llegó a los 5 segundos! Revivimos a través de la red
+                photonView.RPC("RPC_Revive", RpcTarget.All);
+            }
+        }
+        else
+        {
+            // Si el compañero se aleja para disparar o esquivar, el progreso se pierde
+            reviveTimer = 0f;
+        }
+    }
+
+    [PunRPC]
+    private void RPC_Revive()
+    {
+        isDowned = false;
+        currentHealth = maxHealth / 2; // Revive con el 50% de la vida
+
+        // Visual: Lo volvemos a poner de pie
+        transform.eulerAngles = new Vector3(0f, transform.eulerAngles.y, transform.eulerAngles.z);
+
+        // Reactivamos sus controles
+        if (photonView.IsMine)
+        {
+            GetComponent<PlayerMovement>().enabled = true;
+            GetComponent<TopDownWeaponController>().enabled = true;
         }
     }
 
     private void Die()
     {
-        if (destroyOnDeath && photonView.IsMine) 
+        if (destroyOnDeath && photonView.IsMine)
         {
-            // 1. Buscamos al WaveManager en la escena
-            WaveManager waveManager = FindObjectOfType<WaveManager>();
-            
-            // 2. Le avisamos que acabamos de morir
-            if (waveManager != null)
+            // Solo avisamos al WaveManager si NO es un jugador
+            if (!isPlayer)
             {
-                waveManager.ZombieDied();
+                WaveManager waveManager = FindObjectOfType<WaveManager>();
+                if (waveManager != null)
+                {
+                    waveManager.ZombieDied();
+                }
             }
 
-            // 3. Nos destruimos de la red
             PhotonNetwork.Destroy(gameObject);
         }
+    }
+
+    // Dibuja el radio de revivir en el editor para ajustarlo fácil
+    private void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.green;
+        Gizmos.DrawWireSphere(transform.position, reviveRadius);
     }
 }

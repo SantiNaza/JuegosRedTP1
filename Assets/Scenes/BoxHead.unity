@@ -365,6 +365,10 @@ PrefabInstance:
       propertyPath: mainCamera
       value: 
       objectReference: {fileID: 840398554}
+    - target: {fileID: 6536455345681546558, guid: 6f61dc103a945294d9bec0f9f4f2df81, type: 3}
+      propertyPath: reviveRadius
+      value: 1.5
+      objectReference: {fileID: 0}
     - target: {fileID: 7944469229502817079, guid: 6f61dc103a945294d9bec0f9f4f2df81, type: 3}
       propertyPath: m_Layer
       value: 6

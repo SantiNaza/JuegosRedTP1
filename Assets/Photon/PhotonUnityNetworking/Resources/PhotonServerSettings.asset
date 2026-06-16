@@ -50,6 +50,8 @@ MonoBehaviour:
   - RPC_NotifyMasterOfHit
   - RPC_RequestMasterToShoot
   - RPC_UpdateUI
+  - RPC_EnterDownedState
+  - RPC_Revive
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 1
