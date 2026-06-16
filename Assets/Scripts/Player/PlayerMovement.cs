@@ -1,5 +1,6 @@
 using UnityEngine;
 using Photon.Pun;
+using System.Collections;
 
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(PhotonView))]
@@ -15,6 +16,9 @@ public class PlayerMovement : MonoBehaviourPun
 
     private Rigidbody rb;
     private Vector3 moveInput;
+    
+    // NUEVO: Bandera para saber si estamos siendo empujados
+    private bool isKnockedBack = false; 
 
     private void Awake()
     {
@@ -23,7 +27,8 @@ public class PlayerMovement : MonoBehaviourPun
 
     private void Update()
     {
-        if (!photonView.IsMine)
+        // Si no es nuestro jugador O si estamos siendo empujados, no procesamos inputs
+        if (!photonView.IsMine || isKnockedBack)
         {
             return;
         }
@@ -41,7 +46,8 @@ public class PlayerMovement : MonoBehaviourPun
 
     private void FixedUpdate()
     {
-        if (!photonView.IsMine)
+        // No forzamos el movimiento normal si estamos en medio de un empuje
+        if (!photonView.IsMine || isKnockedBack)
         {
             return;
         }
@@ -79,5 +85,33 @@ public class PlayerMovement : MonoBehaviourPun
             groundCheckDistance,
             groundLayer
         );
+    }
+
+    // ==========================================
+    // SISTEMA DE EMPUJE (ADAPTADO PARA RIGIDBODY)
+    // ==========================================
+    [PunRPC]
+    public void RPC_ApplyKnockback(Vector3 knockbackForce)
+    {
+        // Solo el dueño del personaje calcula su propio empuje físico
+        if (!photonView.IsMine) return;
+        
+        StartCoroutine(KnockbackRoutine(knockbackForce));
+    }
+
+    private IEnumerator KnockbackRoutine(Vector3 force)
+    {
+        isKnockedBack = true; // Pausamos el control del jugador temporalmente
+
+        // Frenamos en seco al personaje para que el impacto no se sume a la inercia anterior
+        rb.velocity = Vector3.zero; 
+
+        // Aplicamos la fuerza de golpe instantánea (Impulse)
+        rb.AddForce(force, ForceMode.Impulse);
+
+        // Esperamos el tiempo de "aturdimiento" / duración del empuje
+        yield return new WaitForSeconds(0.2f);
+
+        isKnockedBack = false; // Devolvemos el control total al jugador
     }
 }

@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.AI;
 using Photon.Pun;
+using System.Collections;
 
 [RequireComponent(typeof(NavMeshAgent))]
 public class ZombieAI : MonoBehaviourPun
@@ -87,5 +88,40 @@ public class ZombieAI : MonoBehaviourPun
                 closestPlayer = player.transform;
             }
         }
+    }
+
+    // ==========================================
+    // SISTEMA DE EMPUJE (KNOCKBACK)
+    // ==========================================
+    [PunRPC]
+    public void RPC_ApplyKnockback(Vector3 knockbackForce)
+    {
+        // Solo el Master Client controla los movimientos físicos de los zombies
+        if (!PhotonNetwork.IsMasterClient) return;
+        
+        StartCoroutine(KnockbackRoutine(knockbackForce));
+    }
+
+    private IEnumerator KnockbackRoutine(Vector3 force)
+    {
+        float duration = 0.2f;
+        float time = 0;
+
+        // Pausamos su IA momentáneamente para que no se resista al empuje
+        if (agent.isOnNavMesh) agent.isStopped = true;
+
+        while (time < duration)
+        {
+            // Usamos agent.Move() para que el NavMesh respete las paredes y no lo empujemos a través de ellas
+            if (agent.isOnNavMesh)
+            {
+                agent.Move(force * (Time.deltaTime / duration));
+            }
+            time += Time.deltaTime;
+            yield return null;
+        }
+
+        // Reanudamos la persecución
+        if (agent.isOnNavMesh) agent.isStopped = false;
     }
 }

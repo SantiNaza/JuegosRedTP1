@@ -1,5 +1,6 @@
 using UnityEngine;
 using Photon.Pun;
+using System.Collections;
 
 public class TopDownWeaponController : MonoBehaviourPun
 {
@@ -15,6 +16,10 @@ public class TopDownWeaponController : MonoBehaviourPun
     public float meleeRange = 2f;
     public float meleeCooldown = 1f;
     private float nextMeleeTime = 0f;
+
+    [Header("Configuración de Patada")]
+    public float kickDamage = 10f; // Poca vida
+    public float kickForce = 8f;   // Fuerza del empuje (ajustable)
 
     [Header("Cámara")]
     public Camera mainCamera;
@@ -96,15 +101,35 @@ public class TopDownWeaponController : MonoBehaviourPun
         Vector3 centroDelGolpe = transform.position + (transform.forward * 1f);
         Collider[] impactados = Physics.OverlapSphere(centroDelGolpe, meleeRange);
 
-        foreach (Collider collider in impactados)
+        foreach (Collider col in impactados)
         {
-            if (collider.CompareTag("Zombie") || collider.CompareTag("Obstacle"))
+            // Evitamos patearnos a nosotros mismos
+            if (col.gameObject == this.gameObject) continue;
+
+            // Calculamos la dirección del empuje: desde nosotros hacia el objetivo
+            Vector3 direccionEmpuje = (col.transform.position - transform.position).normalized;
+            direccionEmpuje.y = 0; // Mantenemos el empuje estrictamente horizontal
+
+            PhotonView targetView = col.GetComponent<PhotonView>();
+            if (targetView == null) continue;
+
+            if (col.CompareTag("Zombie"))
             {
-                HealthSystem target = collider.GetComponent<HealthSystem>();
-                if (target != null)
+                // 1. Sacamos poca vida al zombie
+                HealthSystem targetHealth = col.GetComponent<HealthSystem>();
+                if (targetHealth != null)
                 {
-                    target.photonView.RPC("RPC_TakeDamage", RpcTarget.All, meleeDamage);
+                    targetView.RPC("RPC_TakeDamage", RpcTarget.All, kickDamage);
                 }
+
+                // 2. Empujamos al zombie (le enviamos la orden al Master Client que controla la IA)
+                targetView.RPC("RPC_ApplyKnockback", RpcTarget.MasterClient, direccionEmpuje * kickForce);
+            }
+            else if (col.CompareTag("Player"))
+            {
+                // 1. Empujamos al compañero sin hacerle daño
+                // Le enviamos la orden a "Owner" (la computadora de tu amigo) para que mueva a su personaje
+                targetView.RPC("RPC_ApplyKnockback", targetView.Owner, direccionEmpuje * kickForce);
             }
         }
     }

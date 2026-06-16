@@ -10,9 +10,9 @@ public class HealthSystem : MonoBehaviourPun
     [Header("Configuración de Jugador (Revivir)")]
     public bool isPlayer = false; // Marcar en TRUE solo en el Prefab del jugador
     public bool isDowned = false;
-    private float bleedOutTimer = 30f;
+    private float bleedOutTimer = 15f;
     private float reviveTimer = 0f;
-    public float timeRequiredToRevive = 5f;
+    public float timeRequiredToRevive = 3f;
     public float reviveRadius = 2f; // Distancia a la que debe estar el compañero
 
     void Start()
@@ -73,6 +73,16 @@ public class HealthSystem : MonoBehaviourPun
         // Visual: Acostamos al personaje en el piso
         transform.eulerAngles = new Vector3(90f, transform.eulerAngles.y, transform.eulerAngles.z);
 
+        // NUEVO: Congelar al jugador y volverlo "invisible" para los zombies
+        gameObject.tag = "Untagged"; // Los zombies ya no lo detectarán
+        
+        Rigidbody rb = GetComponent<Rigidbody>();
+        if (rb != null)
+        {
+            rb.velocity = Vector3.zero; // Frenamos cualquier inercia de caída o movimiento
+            rb.isKinematic = true;      // Apagamos las reacciones físicas para que NO ruede
+        }
+
         // Desactivamos el movimiento y el disparo para el dueño
         if (photonView.IsMine)
         {
@@ -128,6 +138,15 @@ public class HealthSystem : MonoBehaviourPun
 
         // Visual: Lo volvemos a poner de pie
         transform.eulerAngles = new Vector3(0f, transform.eulerAngles.y, transform.eulerAngles.z);
+
+        // NUEVO: Restaurar las físicas y volver a ser objetivo de los zombies
+        gameObject.tag = "Player"; // Los zombies volverán a perseguirlo
+        
+        Rigidbody rb = GetComponent<Rigidbody>();
+        if (rb != null)
+        {
+            rb.isKinematic = false; // Volvemos a encender las físicas y la gravedad
+        }
 
         // Reactivamos sus controles
         if (photonView.IsMine)

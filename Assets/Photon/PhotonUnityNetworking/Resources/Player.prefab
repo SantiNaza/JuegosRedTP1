@@ -713,7 +713,7 @@ MonoBehaviour:
   destroyOnDeath: 1
   isPlayer: 1
   isDowned: 0
-  timeRequiredToRevive: 5
+  timeRequiredToRevive: 3
   reviveRadius: 2
 --- !u!114 &2368473593385675097
 MonoBehaviour:
@@ -752,6 +752,8 @@ MonoBehaviour:
   meleeDamage: 50
   meleeRange: 2
   meleeCooldown: 1
+  kickDamage: 10
+  kickForce: 8
   mainCamera: {fileID: 0}
 --- !u!1 &8827059208307967625
 GameObject:
