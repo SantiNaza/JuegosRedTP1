@@ -226,8 +226,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 100
+  currentHealth: 0
   destroyOnDeath: 1
   isPlayer: 0
   isDowned: 0
+  maxBleedOutTime: 15
   timeRequiredToRevive: 5
   reviveRadius: 2

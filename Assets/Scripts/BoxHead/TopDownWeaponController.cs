@@ -4,12 +4,21 @@ using System.Collections;
 
 public class TopDownWeaponController : MonoBehaviourPun
 {
-    [Header("Configuración de Pistola")]
+    [Header("Configuración de Pistola (Modificable por Stats)")]
     public string bulletPrefabName = "Bullet";
     public float gunDamage = 25f;
-    public float fireRate = 0.5f; // Más rápido para un juego tipo Boxhead
+    public float fireRate = 0.5f;
+    public int magCapacity = 15; // Capacidad del cargador
+    public float reloadSpeed = 2f; // Tiempo de recarga
+
+    [Header("Estado del Arma")]
+    private int currentAmmo;
+    // La hacemos pública para leerla, pero privada para modificarla
+    public int cargadoresActuales = 3; // Agregamos los cargadores
+    public bool isReloading { get; private set; } = false;
     private float nextFireTime = 0f;
-    public Transform firePoint; // Desde dónde sale la bala (ej. la punta del arma)
+    public Transform firePoint;
+    private GameObject reloadTextObj;
 
     [Header("Configuración de Melee")]
     public float meleeDamage = 50f;
@@ -18,42 +27,68 @@ public class TopDownWeaponController : MonoBehaviourPun
     private float nextMeleeTime = 0f;
 
     [Header("Configuración de Patada")]
-    public float kickDamage = 10f; // Poca vida
-    public float kickForce = 8f;   // Fuerza del empuje (ajustable)
+    public float kickDamage = 10f;
+    public float kickForce = 8f;
 
-    [Header("Cámara")]
     public Camera mainCamera;
 
     void Start()
     {
         if (!photonView.IsMine)
         {
-            enabled = false; // Desactivar si no es nuestro jugador
+            enabled = false;
             return;
         }
 
-        // Si no asignaste la cámara, la busca automáticamente (debe tener el tag MainCamera)
-        if (mainCamera == null)
-        {
-            mainCamera = Camera.main;
-        }
+        if (mainCamera == null) mainCamera = Camera.main;
+
+        // Llenamos el cargador al inicio
+        currentAmmo = magCapacity;
+
+        // Creamos el texto de recarga sin tocar el editor de Unity
+        photonView.RPC("RPC_CrearTextoRecarga", RpcTarget.AllBuffered);
+    }
+
+    // --- NUEVO: Función para inyectar los stats desde el guardado local ---
+    public void AplicarMejoras(float dañoExtra, float fireRateMejora, int extraMag, float reloadMejora)
+    {
+        gunDamage += dañoExtra;
+        fireRate -= fireRateMejora; // Menor tiempo = dispara más rápido
+        magCapacity += extraMag;
+        reloadSpeed -= reloadMejora; // Menos tiempo para recargar
+
+        currentAmmo = magCapacity; // Actualizamos la bala actual al nuevo máximo
     }
 
     void Update()
     {
-        if (!photonView.IsMine) return;
+        if (!photonView.IsMine || isReloading) return;
 
-        // Orientar al jugador hacia el mouse constantemente (Opcional, pero ideal para Top-Down)
         ApuntarHaciaElMouse();
 
-        // Disparo con clic izquierdo
-        if (Input.GetMouseButtonDown(0) && Time.time >= nextFireTime)
+        // Recarga manual
+        if (Input.GetKeyDown(KeyCode.R) && currentAmmo < magCapacity)
         {
-            nextFireTime = Time.time + fireRate;
-            DispararPistola();
+            StartCoroutine(Recargar());
+            return;
         }
 
-        // Golpe melee con clic derecho
+        // Disparo
+        if (Input.GetMouseButton(0) && Time.time >= nextFireTime)
+        {
+            if (currentAmmo > 0)
+            {
+                nextFireTime = Time.time + fireRate;
+                DispararPistola();
+            }
+            else
+            {
+                // Si no hay balas, forzamos recarga
+                StartCoroutine(Recargar());
+            }
+        }
+
+        // Melee
         if (Input.GetMouseButtonDown(1) && Time.time >= nextMeleeTime)
         {
             nextMeleeTime = Time.time + meleeCooldown;
@@ -61,33 +96,82 @@ public class TopDownWeaponController : MonoBehaviourPun
         }
     }
 
+    private IEnumerator Recargar()
+    {
+        isReloading = true;
+
+        // Disparamos el RPC a TODOS los jugadores para prender el cartel
+        photonView.RPC("RPC_MostrarTextoRecarga", RpcTarget.All, true);
+
+        yield return new WaitForSeconds(reloadSpeed);
+
+        currentAmmo = magCapacity;
+        isReloading = false;
+
+        // Disparamos el RPC para apagar el cartel
+        photonView.RPC("RPC_MostrarTextoRecarga", RpcTarget.All, false);
+    }
+
+    [PunRPC]
+    private void RPC_CrearTextoRecarga()
+    {
+        // Creamos un objeto vacío y lo hacemos hijo del jugador
+        reloadTextObj = new GameObject("TextoRecarga");
+        reloadTextObj.transform.SetParent(this.transform);
+        reloadTextObj.transform.localPosition = new Vector3(0f, 2.5f, 0f); // Arriba de la cabeza
+
+        // Le agregamos el componente de texto 3D clásico de Unity
+        TextMesh tm = reloadTextObj.AddComponent<TextMesh>();
+        tm.text = "¡RECARGANDO!";
+        tm.characterSize = 0.15f;
+        tm.fontSize = 40;
+        tm.anchor = TextAnchor.MiddleCenter;
+        tm.alignment = TextAlignment.Center;
+        tm.color = Color.yellow; // Un color que resalte
+
+        // Lo dejamos apagado por defecto
+        reloadTextObj.SetActive(false);
+    }
+
+    [PunRPC]
+    public void RPC_MostrarTextoRecarga(bool mostrar)
+    {
+        if (reloadTextObj != null)
+        {
+            reloadTextObj.SetActive(mostrar);
+        }
+    }
+
+    // --- FIN MÉTODOS DE TEXTO ---
+
+    private void LateUpdate()
+    {
+        // Para que el texto no gire como una calesita cuando el jugador apunta
+        if (reloadTextObj != null && reloadTextObj.activeSelf && mainCamera != null)
+        {
+            reloadTextObj.transform.rotation = mainCamera.transform.rotation;
+        }
+    }
+
     private void ApuntarHaciaElMouse()
     {
-        // 1. Creamos un plano imaginario a la altura del jugador (normal hacia arriba)
         Plane planoSuelo = new Plane(Vector3.up, transform.position);
-
-        // 2. Lanzamos un rayo desde la cámara pasando por el cursor del mouse
         Ray rayoMouse = mainCamera.ScreenPointToRay(Input.mousePosition);
-
-        // 3. Calculamos dónde choca el rayo con el plano
         float distanciaAlPlano;
+
         if (planoSuelo.Raycast(rayoMouse, out distanciaAlPlano))
         {
             Vector3 puntoDeApunto = rayoMouse.GetPoint(distanciaAlPlano);
-
-            // 4. Hacemos que el personaje rote para mirar a ese punto
             Vector3 direccionMira = new Vector3(puntoDeApunto.x, transform.position.y, puntoDeApunto.z);
             transform.LookAt(direccionMira);
         }
     }
 
-        private void DispararPistola()
+    private void DispararPistola()
     {
-        // Instanciamos la bala en red usando el nombre del Prefab. 
-        // Aparecerá en la posición y con la misma rotación que tiene el "firePoint".
-        GameObject bulletObj = PhotonNetwork.Instantiate(bulletPrefabName, firePoint.position, firePoint.rotation);
+        currentAmmo--; // Gastamos una bala
 
-        // Buscamos el script de la bala que acaba de nacer y le configuramos el daño
+        GameObject bulletObj = PhotonNetwork.Instantiate(bulletPrefabName, firePoint.position, firePoint.rotation);
         Bullet bulletScript = bulletObj.GetComponent<Bullet>();
         if (bulletScript != null)
         {
@@ -97,44 +181,35 @@ public class TopDownWeaponController : MonoBehaviourPun
 
     private void AtaqueMelee()
     {
-        // Creamos una zona de daño frente al jugador
         Vector3 centroDelGolpe = transform.position + (transform.forward * 1f);
         Collider[] impactados = Physics.OverlapSphere(centroDelGolpe, meleeRange);
 
         foreach (Collider col in impactados)
         {
-            // Evitamos patearnos a nosotros mismos
             if (col.gameObject == this.gameObject) continue;
 
-            // Calculamos la dirección del empuje: desde nosotros hacia el objetivo
             Vector3 direccionEmpuje = (col.transform.position - transform.position).normalized;
-            direccionEmpuje.y = 0; // Mantenemos el empuje estrictamente horizontal
+            direccionEmpuje.y = 0;
 
             PhotonView targetView = col.GetComponent<PhotonView>();
             if (targetView == null) continue;
 
             if (col.CompareTag("Zombie"))
             {
-                // 1. Sacamos poca vida al zombie
                 HealthSystem targetHealth = col.GetComponent<HealthSystem>();
                 if (targetHealth != null)
                 {
                     targetView.RPC("RPC_TakeDamage", RpcTarget.All, kickDamage);
                 }
-
-                // 2. Empujamos al zombie (le enviamos la orden al Master Client que controla la IA)
                 targetView.RPC("RPC_ApplyKnockback", RpcTarget.MasterClient, direccionEmpuje * kickForce);
             }
             else if (col.CompareTag("Player"))
             {
-                // 1. Empujamos al compañero sin hacerle daño
-                // Le enviamos la orden a "Owner" (la computadora de tu amigo) para que mueva a su personaje
                 targetView.RPC("RPC_ApplyKnockback", targetView.Owner, direccionEmpuje * kickForce);
             }
         }
     }
 
-    // Dibuja la esfera del melee en el editor para que puedas ajustar el tamaño visualmente
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.red;

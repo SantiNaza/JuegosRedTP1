@@ -18,11 +18,18 @@ public class PlayerMovement : MonoBehaviourPun
     private Vector3 moveInput;
     
     // NUEVO: Bandera para saber si estamos siendo empujados
-    private bool isKnockedBack = false; 
+    private bool isKnockedBack = false;
+
+    // Agregamos esta variable al principio de tu script PlayerMovement
+    private TopDownWeaponController weaponController;
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
+        weaponController = GetComponent<TopDownWeaponController>();
+
+        // SOLUCIÓN A LOS TROPEZONES: Congelamos la rotación para que no se caiga
+        rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
     }
 
     private void Update()
@@ -57,7 +64,14 @@ public class PlayerMovement : MonoBehaviourPun
 
     private void Move()
     {
-        Vector3 velocity = moveInput * moveSpeed;
+        // Revisamos si estamos recargando para reducir la velocidad a la mitad
+        float currentSpeed = moveSpeed;
+        if (weaponController != null && weaponController.isReloading)
+        {
+            currentSpeed = moveSpeed / 2f;
+        }
+
+        Vector3 velocity = moveInput * currentSpeed;
 
         rb.velocity = new Vector3(
             velocity.x,
@@ -113,5 +127,25 @@ public class PlayerMovement : MonoBehaviourPun
         yield return new WaitForSeconds(0.2f);
 
         isKnockedBack = false; // Devolvemos el control total al jugador
+    }
+
+    [Header("Configuración de Cámara")]
+    private Vector3 cameraOffset = new Vector3(0f, 12f, -6f); // Ajustá la altura y distancia acá
+    private Vector3 anguloCamara = new Vector3(60f, 0f, 0f);  // Inclinación mirando hacia abajo
+
+    // Mové esta función al final de tu script PlayerMovement.cs
+    private void LateUpdate()
+    {
+        // Solo movemos la cámara si este es nuestro jugador
+        if (!photonView.IsMine) return;
+
+        if (Camera.main != null)
+        {
+            // 1. La cámara copia tu posición más el offset, pero NO es hija tuya
+            Camera.main.transform.position = transform.position + cameraOffset;
+
+            // 2. Clavamos la rotación para que siempre mire igual sin importar a dónde apuntes
+            Camera.main.transform.rotation = Quaternion.Euler(anguloCamara);
+        }
     }
 }

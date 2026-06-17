@@ -53,6 +53,10 @@ MonoBehaviour:
   - RPC_EnterDownedState
   - RPC_Revive
   - RPC_ApplyKnockback
+  - RPC_CrearTextoRecarga
+  - RPC_MostrarTextoRecarga
+  - RPC_ActualizarTextoCaido
+  - RPC_CrearTextoCuentaRegresiva
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 1

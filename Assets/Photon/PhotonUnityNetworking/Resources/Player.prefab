@@ -536,6 +536,7 @@ GameObject:
   - component: {fileID: 6536455345681546558}
   - component: {fileID: 2368473593385675097}
   - component: {fileID: 5445279296785784128}
+  - component: {fileID: 8686973222624548330}
   m_Layer: 6
   m_Name: Player
   m_TagString: Player
@@ -645,6 +646,7 @@ MonoBehaviour:
   observableSearch: 2
   ObservedComponents:
   - {fileID: 5180643711351041223}
+  - {fileID: 8686973222624548330}
   sceneViewId: 0
   InstantiationId: 0
   isRuntimeInstantiated: 0
@@ -710,9 +712,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 100
+  currentHealth: 0
   destroyOnDeath: 1
   isPlayer: 1
   isDowned: 0
+  maxBleedOutTime: 15
   timeRequiredToRevive: 3
   reviveRadius: 2
 --- !u!114 &2368473593385675097
@@ -748,6 +752,9 @@ MonoBehaviour:
   bulletPrefabName: Bullet
   gunDamage: 50
   fireRate: 0.5
+  magCapacity: 15
+  reloadSpeed: 2
+  cargadoresActuales: 3
   firePoint: {fileID: 6794958718673616309}
   meleeDamage: 50
   meleeRange: 2
@@ -755,6 +762,18 @@ MonoBehaviour:
   kickDamage: 10
   kickForce: 8
   mainCamera: {fileID: 0}
+--- !u!114 &8686973222624548330
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8367049372155576086}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 78bc16046233f6541b792a9ad5d9eef9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &8827059208307967625
 GameObject:
   m_ObjectHideFlags: 0
