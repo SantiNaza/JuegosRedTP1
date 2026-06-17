@@ -20,21 +20,29 @@ public class WaveManager : MonoBehaviourPun
 
     async void Start()
     {
-        if (PhotonManager.Instance != null)
+        // --- FIX: ¿Venimos del menú o le dimos Play a la escena? ---
+        if (PhotonNetwork.InRoom)
         {
+            // Si ya estamos en una sala (venimos del menú), arrancamos de una
+            ComprobarYArrancar();
+        }
+        else if (PhotonManager.Instance != null)
+        {
+            // Si no estamos en una sala (Play desde el editor), esperamos el evento
             PhotonManager.Instance.OnRoom += ComprobarYArrancar;
         }
 
-        // 1. Inicializamos los servicios SIN IMPORTAR si somos Master Client todavía.
-        // Esto toma unos milisegundos, así que lo hacemos apenas arranca la escena.
-        if (UnityServices.State == ServicesInitializationState.Uninitialized)
+        // --- INICIO DE LÓGICA LIVE-OPS ---
+        if (PhotonNetwork.IsMasterClient)
         {
-            await UnityServices.InitializeAsync();
-            await AuthenticationService.Instance.SignInAnonymouslyAsync();
-        }
+            if (UnityServices.State == ServicesInitializationState.Uninitialized)
+            {
+                await UnityServices.InitializeAsync();
+                await AuthenticationService.Instance.SignInAnonymouslyAsync();
+            }
 
-        // 2. Le decimos a Unity qué método ejecutar cuando termine de descargar datos
-        RemoteConfigService.Instance.FetchCompleted += AplicarConfiguracionRemota;
+            RemoteConfigService.Instance.FetchCompleted += AplicarConfiguracionRemota;
+        }
     }
 
     void OnDestroy()
