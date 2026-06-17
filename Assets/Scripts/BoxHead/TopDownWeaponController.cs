@@ -199,14 +199,19 @@ public class TopDownWeaponController : MonoBehaviourPun
 
     private void LateUpdate()
     {
-        // Actualizamos la rotación de ambos textos para que miren a la cámara
+        // Esta es la clave: le decimos a AMBOS textos que ignoren la rotación del jugador
+        // y se queden mirando fijamente en la misma dirección que la cámara.
         if (mainCamera != null)
         {
             if (reloadTextObj != null && reloadTextObj.activeSelf)
+            {
                 reloadTextObj.transform.rotation = mainCamera.transform.rotation;
+            }
 
             if (dropTextObj != null && dropTextObj.activeSelf)
+            {
                 dropTextObj.transform.rotation = mainCamera.transform.rotation;
+            }
         }
     }
 
