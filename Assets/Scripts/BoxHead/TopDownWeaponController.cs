@@ -11,10 +11,12 @@ public class TopDownWeaponController : MonoBehaviourPun
     public int magCapacity = 15; // Capacidad del cargador
     public float reloadSpeed = 2f; // Tiempo de recarga
 
+    [Header("Configuración de Drop de Cargadores")]
+    public string droppedMagPrefabName = "CargadorSuelto"; // Nombre del prefab en la carpeta Resources
+
     [Header("Estado del Arma")]
     private int currentAmmo;
-    // La hacemos pública para leerla, pero privada para modificarla
-    public int cargadoresActuales = 3; // Agregamos los cargadores
+    public int cargadoresActuales = 3;
     public bool isReloading { get; private set; } = false;
     private float nextFireTime = 0f;
     public Transform firePoint;
@@ -49,15 +51,14 @@ public class TopDownWeaponController : MonoBehaviourPun
         photonView.RPC("RPC_CrearTextoRecarga", RpcTarget.AllBuffered);
     }
 
-    // --- NUEVO: Función para inyectar los stats desde el guardado local ---
     public void AplicarMejoras(float dañoExtra, float fireRateMejora, int extraMag, float reloadMejora)
     {
         gunDamage += dañoExtra;
-        fireRate -= fireRateMejora; // Menor tiempo = dispara más rápido
+        fireRate -= fireRateMejora;
         magCapacity += extraMag;
-        reloadSpeed -= reloadMejora; // Menos tiempo para recargar
+        reloadSpeed -= reloadMejora;
 
-        currentAmmo = magCapacity; // Actualizamos la bala actual al nuevo máximo
+        currentAmmo = magCapacity;
     }
 
     void Update()
@@ -67,10 +68,16 @@ public class TopDownWeaponController : MonoBehaviourPun
         ApuntarHaciaElMouse();
 
         // Recarga manual
-        if (Input.GetKeyDown(KeyCode.R) && currentAmmo < magCapacity)
+        if (Input.GetKeyDown(KeyCode.R) && currentAmmo < magCapacity && cargadoresActuales > 0)
         {
             StartCoroutine(Recargar());
             return;
+        }
+
+        // Soltar Cargador para un compañero (Tecla G)
+        if (Input.GetKeyDown(KeyCode.G) && cargadoresActuales > 0)
+        {
+            SoltarCargador();
         }
 
         // Disparo
@@ -81,9 +88,9 @@ public class TopDownWeaponController : MonoBehaviourPun
                 nextFireTime = Time.time + fireRate;
                 DispararPistola();
             }
-            else
+            else if (cargadoresActuales > 0)
             {
-                // Si no hay balas, forzamos recarga
+                // Si no hay balas pero hay cargadores, forzamos recarga
                 StartCoroutine(Recargar());
             }
         }
@@ -100,36 +107,48 @@ public class TopDownWeaponController : MonoBehaviourPun
     {
         isReloading = true;
 
-        // Disparamos el RPC a TODOS los jugadores para prender el cartel
         photonView.RPC("RPC_MostrarTextoRecarga", RpcTarget.All, true);
 
         yield return new WaitForSeconds(reloadSpeed);
 
+        // AHORA SÍ: Consumimos un cargador de la reserva
+        cargadoresActuales--;
         currentAmmo = magCapacity;
         isReloading = false;
 
-        // Disparamos el RPC para apagar el cartel
         photonView.RPC("RPC_MostrarTextoRecarga", RpcTarget.All, false);
     }
+
+    // --- NUEVOS MÉTODOS PARA SOLTAR Y RECIBIR CARGADORES ---
+    private void SoltarCargador()
+    {
+        cargadoresActuales--; // Restamos uno de nuestra reserva
+
+        // Instanciamos el cargador en el piso usando Photon para que todos lo vean
+        PhotonNetwork.Instantiate(droppedMagPrefabName, firePoint.position, Quaternion.identity);
+    }
+
+    public void RecibirCargador()
+    {
+        cargadoresActuales++; // Sumamos uno a la reserva
+    }
+    // --------------------------------------------------------
 
     [PunRPC]
     private void RPC_CrearTextoRecarga()
     {
-        // Creamos un objeto vacío y lo hacemos hijo del jugador
         reloadTextObj = new GameObject("TextoRecarga");
         reloadTextObj.transform.SetParent(this.transform);
-        reloadTextObj.transform.localPosition = new Vector3(0f, 2.5f, 0f); // Arriba de la cabeza
+        reloadTextObj.transform.localPosition = new Vector3(0f, 2.5f, 0f);
 
-        // Le agregamos el componente de texto 3D clásico de Unity
         TextMesh tm = reloadTextObj.AddComponent<TextMesh>();
         tm.text = "¡RECARGANDO!";
         tm.characterSize = 0.15f;
         tm.fontSize = 40;
         tm.anchor = TextAnchor.MiddleCenter;
         tm.alignment = TextAlignment.Center;
-        tm.color = Color.yellow; // Un color que resalte
+        tm.color = Color.yellow;
 
-        // Lo dejamos apagado por defecto
         reloadTextObj.SetActive(false);
     }
 
@@ -142,11 +161,8 @@ public class TopDownWeaponController : MonoBehaviourPun
         }
     }
 
-    // --- FIN MÉTODOS DE TEXTO ---
-
     private void LateUpdate()
     {
-        // Para que el texto no gire como una calesita cuando el jugador apunta
         if (reloadTextObj != null && reloadTextObj.activeSelf && mainCamera != null)
         {
             reloadTextObj.transform.rotation = mainCamera.transform.rotation;
@@ -169,7 +185,7 @@ public class TopDownWeaponController : MonoBehaviourPun
 
     private void DispararPistola()
     {
-        currentAmmo--; // Gastamos una bala
+        currentAmmo--;
 
         GameObject bulletObj = PhotonNetwork.Instantiate(bulletPrefabName, firePoint.position, firePoint.rotation);
         Bullet bulletScript = bulletObj.GetComponent<Bullet>();
