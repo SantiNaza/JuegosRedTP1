@@ -40,17 +40,17 @@ public class TopDownWeaponController : MonoBehaviourPun
 
     void Start()
     {
-        if (!photonView.IsMine)
-        {
-            enabled = false;
-            return;
-        }
-
+        // CLAVE 1: Todos los clones en la partida necesitan registrar la cámara local 
+        // de esta compu para poder orientar sus carteles correctamente.
         if (mainCamera == null) mainCamera = Camera.main;
+
+        // CLAVE 2: En vez de apagar el script con 'enabled = false', hacemos un return directo.
+        // Así el script queda activo y permite que LateUpdate() funcione para los enemigos/aliados.
+        if (!photonView.IsMine) return;
 
         currentAmmo = magCapacity;
 
-        // Creamos los textos de recarga y drop al inicio
+        // Creamos los textos de recarga y drop al inicio (solo el dueño dispara el buffer)
         photonView.RPC("RPC_CrearTextoRecarga", RpcTarget.AllBuffered);
         photonView.RPC("RPC_CrearTextoDrop", RpcTarget.AllBuffered);
     }
@@ -67,6 +67,7 @@ public class TopDownWeaponController : MonoBehaviourPun
 
     void Update()
     {
+        // Esto protege perfectamente que nadie controle a un jugador ajeno
         if (!photonView.IsMine || isReloading) return;
 
         ApuntarHaciaElMouse();
@@ -122,7 +123,6 @@ public class TopDownWeaponController : MonoBehaviourPun
 
         PhotonNetwork.Instantiate(droppedMagPrefabName, firePoint.position, Quaternion.identity);
 
-        // Disparamos el cartelito de drop a todos los jugadores pasándole cuántos nos quedan
         photonView.RPC("RPC_MostrarTextoDrop", RpcTarget.All, cargadoresActuales);
     }
 
@@ -156,7 +156,6 @@ public class TopDownWeaponController : MonoBehaviourPun
     {
         dropTextObj = new GameObject("TextoDrop");
         dropTextObj.transform.SetParent(this.transform);
-        // Lo ponemos un poco más alto que el de recarga por si coinciden
         dropTextObj.transform.localPosition = new Vector3(0f, 3.0f, 0f);
 
         dropTextMesh = dropTextObj.AddComponent<TextMesh>();
@@ -164,7 +163,7 @@ public class TopDownWeaponController : MonoBehaviourPun
         dropTextMesh.fontSize = 35;
         dropTextMesh.anchor = TextAnchor.MiddleCenter;
         dropTextMesh.alignment = TextAlignment.Center;
-        dropTextMesh.color = Color.cyan; // Color distinto para que llame la atención
+        dropTextMesh.color = Color.cyan;
 
         dropTextObj.SetActive(false);
     }
@@ -183,14 +182,13 @@ public class TopDownWeaponController : MonoBehaviourPun
             dropTextMesh.text = restantes + " cargadores restantes";
             dropTextObj.SetActive(true);
 
-            // Iniciamos la rutina para apagarlo localmente en cada computadora
             StartCoroutine(OcultarTextoDropRutina());
         }
     }
 
     private IEnumerator OcultarTextoDropRutina()
     {
-        yield return new WaitForSeconds(2f); // El mensaje dura 2 segundos en pantalla
+        yield return new WaitForSeconds(2f);
         if (dropTextObj != null)
         {
             dropTextObj.SetActive(false);
@@ -199,8 +197,9 @@ public class TopDownWeaponController : MonoBehaviourPun
 
     private void LateUpdate()
     {
-        // Esta es la clave: le decimos a AMBOS textos que ignoren la rotación del jugador
-        // y se queden mirando fijamente en la misma dirección que la cámara.
+        // Al estar activo el script para todos los jugadores, esta sección se va a ejecutar 
+        // continuamente en cada réplica online, obligando a los carteles a mirar de frente 
+        // a la cámara local sin importar cuánto rote el personaje sobre su propio eje.
         if (mainCamera != null)
         {
             if (reloadTextObj != null && reloadTextObj.activeSelf)
