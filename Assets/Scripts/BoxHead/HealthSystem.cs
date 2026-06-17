@@ -93,7 +93,7 @@ public class HealthSystem : MonoBehaviourPun
             }
 
             int reviveSegundos = Mathf.CeilToInt(timeRequiredToRevive - reviveTimer);
-            currentText = $"¡ESTABILIZANDO!\nReviviendo en {reviveSegundos}s";
+            currentText = "\nReviviendo en {reviveSegundos}s";
             colorState = 3; // Cyan
         }
         else
