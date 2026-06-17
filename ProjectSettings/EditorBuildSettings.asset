@@ -12,6 +12,9 @@ EditorBuildSettings:
     path: Assets/Scenes/RoomMenu.unity
     guid: 8c5c06f1f1ee51842be7448d1302ae98
   - enabled: 1
+    path: Assets/Scenes/BoxHead.unity
+    guid: cac540b6dc517da4a989fef4dbf87367
+  - enabled: 0
     path: Assets/Scenes/Gameplay.unity
     guid: 9fc0d4010bbf28b4594072e72b8655ab
   m_configObjects: {}

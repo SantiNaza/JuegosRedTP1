@@ -243,7 +243,7 @@ public class RoomPhotonManager : MonoBehaviourPunCallbacks
             GameObject item = Instantiate(roomItemPrefab, roomListContent);
 
             // Le pasamos la info al script del bot�n
-           // item.GetComponent<RoomItem>().Setup(info);
+            item.GetComponent<RoomItem>().Setup(info);
         }
     }
 

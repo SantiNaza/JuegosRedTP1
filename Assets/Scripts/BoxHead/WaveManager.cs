@@ -14,23 +14,9 @@ public class WaveManager : MonoBehaviourPun
 
     void Start()
     {
-        if (PhotonManager.Instance != null)
-        {
-            PhotonManager.Instance.OnRoom += ComprobarYArrancar;
-        }
-    }
-
-    void OnDestroy()
-    {
-        if (PhotonManager.Instance != null)
-        {
-            PhotonManager.Instance.OnRoom -= ComprobarYArrancar;
-        }
-    }
-
-    private void ComprobarYArrancar()
-    {
-        if (PhotonNetwork.IsMasterClient)
+        // Como llegamos a esta escena desde el Menú usando PhotonNetwork.LoadLevel, 
+        // ya estamos dentro de la sala. Arrancamos de inmediato si somos el Host.
+        if (PhotonNetwork.InRoom && PhotonNetwork.IsMasterClient)
         {
             StartCoroutine(StartWave());
         }
