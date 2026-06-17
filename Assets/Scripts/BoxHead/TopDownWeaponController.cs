@@ -8,11 +8,11 @@ public class TopDownWeaponController : MonoBehaviourPun
     public string bulletPrefabName = "Bullet";
     public float gunDamage = 25f;
     public float fireRate = 0.5f;
-    public int magCapacity = 15; // Capacidad del cargador
-    public float reloadSpeed = 2f; // Tiempo de recarga
+    public int magCapacity = 15;
+    public float reloadSpeed = 2f;
 
     [Header("Configuración de Drop de Cargadores")]
-    public string droppedMagPrefabName = "CargadorSuelto"; // Nombre del prefab en la carpeta Resources
+    public string droppedMagPrefabName = "CargadorSuelto";
 
     [Header("Estado del Arma")]
     private int currentAmmo;
@@ -20,7 +20,11 @@ public class TopDownWeaponController : MonoBehaviourPun
     public bool isReloading { get; private set; } = false;
     private float nextFireTime = 0f;
     public Transform firePoint;
+
+    // --- Textos 3D ---
     private GameObject reloadTextObj;
+    private GameObject dropTextObj;
+    private TextMesh dropTextMesh;
 
     [Header("Configuración de Melee")]
     public float meleeDamage = 50f;
@@ -44,11 +48,11 @@ public class TopDownWeaponController : MonoBehaviourPun
 
         if (mainCamera == null) mainCamera = Camera.main;
 
-        // Llenamos el cargador al inicio
         currentAmmo = magCapacity;
 
-        // Creamos el texto de recarga sin tocar el editor de Unity
+        // Creamos los textos de recarga y drop al inicio
         photonView.RPC("RPC_CrearTextoRecarga", RpcTarget.AllBuffered);
+        photonView.RPC("RPC_CrearTextoDrop", RpcTarget.AllBuffered);
     }
 
     public void AplicarMejoras(float dañoExtra, float fireRateMejora, int extraMag, float reloadMejora)
@@ -67,20 +71,17 @@ public class TopDownWeaponController : MonoBehaviourPun
 
         ApuntarHaciaElMouse();
 
-        // Recarga manual
         if (Input.GetKeyDown(KeyCode.R) && currentAmmo < magCapacity && cargadoresActuales > 0)
         {
             StartCoroutine(Recargar());
             return;
         }
 
-        // Soltar Cargador para un compañero (Tecla G)
         if (Input.GetKeyDown(KeyCode.G) && cargadoresActuales > 0)
         {
             SoltarCargador();
         }
 
-        // Disparo
         if (Input.GetMouseButton(0) && Time.time >= nextFireTime)
         {
             if (currentAmmo > 0)
@@ -90,12 +91,10 @@ public class TopDownWeaponController : MonoBehaviourPun
             }
             else if (cargadoresActuales > 0)
             {
-                // Si no hay balas pero hay cargadores, forzamos recarga
                 StartCoroutine(Recargar());
             }
         }
 
-        // Melee
         if (Input.GetMouseButtonDown(1) && Time.time >= nextMeleeTime)
         {
             nextMeleeTime = Time.time + meleeCooldown;
@@ -106,12 +105,10 @@ public class TopDownWeaponController : MonoBehaviourPun
     private IEnumerator Recargar()
     {
         isReloading = true;
-
         photonView.RPC("RPC_MostrarTextoRecarga", RpcTarget.All, true);
 
         yield return new WaitForSeconds(reloadSpeed);
 
-        // AHORA SÍ: Consumimos un cargador de la reserva
         cargadoresActuales--;
         currentAmmo = magCapacity;
         isReloading = false;
@@ -119,20 +116,22 @@ public class TopDownWeaponController : MonoBehaviourPun
         photonView.RPC("RPC_MostrarTextoRecarga", RpcTarget.All, false);
     }
 
-    // --- NUEVOS MÉTODOS PARA SOLTAR Y RECIBIR CARGADORES ---
     private void SoltarCargador()
     {
-        cargadoresActuales--; // Restamos uno de nuestra reserva
+        cargadoresActuales--;
 
-        // Instanciamos el cargador en el piso usando Photon para que todos lo vean
         PhotonNetwork.Instantiate(droppedMagPrefabName, firePoint.position, Quaternion.identity);
+
+        // Disparamos el cartelito de drop a todos los jugadores pasándole cuántos nos quedan
+        photonView.RPC("RPC_MostrarTextoDrop", RpcTarget.All, cargadoresActuales);
     }
 
     public void RecibirCargador()
     {
-        cargadoresActuales++; // Sumamos uno a la reserva
+        cargadoresActuales++;
     }
-    // --------------------------------------------------------
+
+    // --- MÉTODOS DE TEXTO 3D ---
 
     [PunRPC]
     private void RPC_CrearTextoRecarga()
@@ -153,21 +152,65 @@ public class TopDownWeaponController : MonoBehaviourPun
     }
 
     [PunRPC]
+    private void RPC_CrearTextoDrop()
+    {
+        dropTextObj = new GameObject("TextoDrop");
+        dropTextObj.transform.SetParent(this.transform);
+        // Lo ponemos un poco más alto que el de recarga por si coinciden
+        dropTextObj.transform.localPosition = new Vector3(0f, 3.0f, 0f);
+
+        dropTextMesh = dropTextObj.AddComponent<TextMesh>();
+        dropTextMesh.characterSize = 0.12f;
+        dropTextMesh.fontSize = 35;
+        dropTextMesh.anchor = TextAnchor.MiddleCenter;
+        dropTextMesh.alignment = TextAlignment.Center;
+        dropTextMesh.color = Color.cyan; // Color distinto para que llame la atención
+
+        dropTextObj.SetActive(false);
+    }
+
+    [PunRPC]
     public void RPC_MostrarTextoRecarga(bool mostrar)
     {
-        if (reloadTextObj != null)
+        if (reloadTextObj != null) reloadTextObj.SetActive(mostrar);
+    }
+
+    [PunRPC]
+    public void RPC_MostrarTextoDrop(int restantes)
+    {
+        if (dropTextObj != null && dropTextMesh != null)
         {
-            reloadTextObj.SetActive(mostrar);
+            dropTextMesh.text = restantes + " cargadores restantes";
+            dropTextObj.SetActive(true);
+
+            // Iniciamos la rutina para apagarlo localmente en cada computadora
+            StartCoroutine(OcultarTextoDropRutina());
+        }
+    }
+
+    private IEnumerator OcultarTextoDropRutina()
+    {
+        yield return new WaitForSeconds(2f); // El mensaje dura 2 segundos en pantalla
+        if (dropTextObj != null)
+        {
+            dropTextObj.SetActive(false);
         }
     }
 
     private void LateUpdate()
     {
-        if (reloadTextObj != null && reloadTextObj.activeSelf && mainCamera != null)
+        // Actualizamos la rotación de ambos textos para que miren a la cámara
+        if (mainCamera != null)
         {
-            reloadTextObj.transform.rotation = mainCamera.transform.rotation;
+            if (reloadTextObj != null && reloadTextObj.activeSelf)
+                reloadTextObj.transform.rotation = mainCamera.transform.rotation;
+
+            if (dropTextObj != null && dropTextObj.activeSelf)
+                dropTextObj.transform.rotation = mainCamera.transform.rotation;
         }
     }
+
+    // --- FIN MÉTODOS DE TEXTO ---
 
     private void ApuntarHaciaElMouse()
     {
