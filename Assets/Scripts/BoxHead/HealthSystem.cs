@@ -4,30 +4,30 @@ using Photon.Pun;
 public class HealthSystem : MonoBehaviourPun
 {
     public float maxHealth = 100f;
-    public float currentHealth; // Antes era private
+    public float currentHealth;
     public bool destroyOnDeath = true;
 
     [Header("Configuración de Jugador (Revivir)")]
     public bool isPlayer = false;
     public bool isDowned = false;
 
-    // NUEVO: Variables para el control de tiempo
+    // NUEVO: Variable sincronizada por red para saber si aprieta la E
+    public bool isPressingE = false;
+
     public float maxBleedOutTime = 15f;
     private float bleedOutTimer;
     private float reviveTimer = 0f;
     public float timeRequiredToRevive = 3f;
     public float reviveRadius = 2f;
 
-    // NUEVO: Variables para el texto 3D
     private GameObject countdownTextObj;
     private TextMesh countdownTextMesh;
-    private int lastDisplayedTime = -1; // Para no saturar la red mandando el mismo número
+    private string lastDisplayedText = ""; // Para no saturar la red mandando el mismo texto
 
     void Start()
     {
         currentHealth = maxHealth;
 
-        // Creamos el objeto de texto flotante al arrancar la partida
         if (isPlayer)
         {
             photonView.RPC("RPC_CrearTextoCuentaRegresiva", RpcTarget.AllBuffered);
@@ -38,41 +38,97 @@ public class HealthSystem : MonoBehaviourPun
     {
         if (!photonView.IsMine) return;
 
+        // 1. Si estamos VIVOS, leemos el teclado para que el dato viaje por red
+        if (isPlayer && !isDowned)
+        {
+            isPressingE = Input.GetKey(KeyCode.E);
+        }
+
+        // 2. Si estamos CAÍDOS, evaluamos nuestro entorno
         if (isPlayer && isDowned)
         {
-            // Verificamos si alguien nos está tocando/reviviendo
-            bool isBeingRevived = CheckForRevive();
+            ManejarEstadoCaido();
+        }
+    }
 
-            if (isBeingRevived)
+    private void ManejarEstadoCaido()
+    {
+        bool isSomeoneNear = false;
+        bool isSomeonePressingE = false;
+
+        Collider[] colliders = Physics.OverlapSphere(transform.position, reviveRadius);
+        foreach (Collider col in colliders)
+        {
+            if (col.CompareTag("Player") && col.gameObject != this.gameObject)
             {
-                // MECÁNICA DE ESTABILIZACIÓN: Mientras nos tocan, el tiempo vuelve al máximo
-                bleedOutTimer = maxBleedOutTime;
+                HealthSystem allyHealth = col.GetComponent<HealthSystem>();
 
-                // Actualizamos el cartel para que diga que nos están curando
-                ActualizarTextoRed(true, 0, true);
+                if (allyHealth != null && !allyHealth.isDowned)
+                {
+                    isSomeoneNear = true;
+
+                    // Acá verificamos la variable de red del compañero
+                    if (allyHealth.isPressingE)
+                    {
+                        isSomeonePressingE = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        string currentText = "";
+        int colorState = 0; // 0=Rojo, 1=RojoOscuro, 2=Amarillo, 3=Cyan
+
+        if (isSomeonePressingE)
+        {
+            // MECÁNICA DE ESTABILIZACIÓN: Mientras mantienen la E
+            bleedOutTimer = maxBleedOutTime;
+            reviveTimer += Time.deltaTime;
+
+            if (reviveTimer >= timeRequiredToRevive)
+            {
+                photonView.RPC("RPC_Revive", RpcTarget.All);
+                return;
+            }
+
+            int reviveSegundos = Mathf.CeilToInt(timeRequiredToRevive - reviveTimer);
+            currentText = $"¡ESTABILIZANDO!\nReviviendo en {reviveSegundos}s";
+            colorState = 3; // Cyan
+        }
+        else
+        {
+            reviveTimer = 0f; // Reiniciamos si sueltan la E
+            bleedOutTimer -= Time.deltaTime;
+
+            if (bleedOutTimer <= 0)
+            {
+                photonView.RPC("RPC_ActualizarTextoCaido", RpcTarget.All, false, "", 0);
+                Die();
+                return;
+            }
+
+            int bleedSegundos = Mathf.CeilToInt(bleedOutTimer);
+
+            if (isSomeoneNear)
+            {
+                // Aparece la E cuando están cerca
+                currentText = $"[E] Para Revivir\nDesangrado: {bleedSegundos}s";
+                colorState = 2; // Amarillo
             }
             else
             {
-                // Lógica normal de desangrado
-                bleedOutTimer -= Time.deltaTime;
-
-                // Redondeamos para arriba (ej: 29.8 se muestra como 30)
-                int segundosActuales = Mathf.CeilToInt(bleedOutTimer);
-
-                // Solo mandamos el RPC si el segundo entero cambió
-                if (segundosActuales != lastDisplayedTime)
-                {
-                    lastDisplayedTime = segundosActuales;
-                    ActualizarTextoRed(true, segundosActuales, false);
-                }
-
-                if (bleedOutTimer <= 0)
-                {
-                    ActualizarTextoRed(false, 0, false); // Apagamos el texto
-                    Die();
-                    return;
-                }
+                // Lógica normal si nadie ayuda
+                currentText = bleedSegundos.ToString();
+                colorState = bleedSegundos <= 10 ? 1 : 0;
             }
+        }
+
+        // AHORRO DE RED: Solo mandamos la orden si el texto visual cambió
+        if (currentText != lastDisplayedText)
+        {
+            lastDisplayedText = currentText;
+            photonView.RPC("RPC_ActualizarTextoCaido", RpcTarget.All, true, currentText, colorState);
         }
     }
 
@@ -83,7 +139,9 @@ public class HealthSystem : MonoBehaviourPun
     {
         countdownTextObj = new GameObject("TextoDesangrado");
         countdownTextObj.transform.SetParent(this.transform);
-        countdownTextObj.transform.localPosition = new Vector3(0f, 2f, 0f);
+
+        // Lo subimos un poquito en Y (a 3f) porque el texto ahora usa dos renglones (\n)
+        countdownTextObj.transform.localPosition = new Vector3(0f, 3f, 0f);
 
         countdownTextMesh = countdownTextObj.AddComponent<TextMesh>();
         countdownTextMesh.text = "";
@@ -95,30 +153,23 @@ public class HealthSystem : MonoBehaviourPun
         countdownTextObj.SetActive(false);
     }
 
-    private void ActualizarTextoRed(bool mostrar, int segundos, bool estabilizando)
-    {
-        // El dueño le avisa a todos qué mostrar en su cartel
-        photonView.RPC("RPC_ActualizarTextoCaido", RpcTarget.All, mostrar, segundos, estabilizando);
-    }
-
     [PunRPC]
-    public void RPC_ActualizarTextoCaido(bool mostrar, int segundosRestantes, bool estabilizando)
+    public void RPC_ActualizarTextoCaido(bool mostrar, string textoCambiado, int colorState)
     {
         if (countdownTextObj != null)
         {
             countdownTextObj.SetActive(mostrar);
             if (mostrar)
             {
-                if (estabilizando)
+                countdownTextMesh.text = textoCambiado;
+
+                // Mapeamos los colores optimizados
+                switch (colorState)
                 {
-                    countdownTextMesh.text = "¡ESTABILIZANDO!";
-                    countdownTextMesh.color = Color.cyan;
-                }
-                else
-                {
-                    countdownTextMesh.text = segundosRestantes.ToString();
-                    // Si quedan menos de 10 segundos, lo ponemos rojo oscuro, si no, rojo normal
-                    countdownTextMesh.color = segundosRestantes <= 10 ? new Color(0.6f, 0f, 0f) : Color.red;
+                    case 0: countdownTextMesh.color = Color.red; break;
+                    case 1: countdownTextMesh.color = new Color(0.6f, 0f, 0f); break;
+                    case 2: countdownTextMesh.color = Color.yellow; break;
+                    case 3: countdownTextMesh.color = Color.cyan; break;
                 }
             }
         }
@@ -126,7 +177,6 @@ public class HealthSystem : MonoBehaviourPun
 
     private void LateUpdate()
     {
-        // Evita que el número gire cuando el jugador rota en el piso
         if (countdownTextObj != null && countdownTextObj.activeSelf && Camera.main != null)
         {
             countdownTextObj.transform.rotation = Camera.main.transform.rotation;
@@ -161,7 +211,7 @@ public class HealthSystem : MonoBehaviourPun
         isDowned = true;
         bleedOutTimer = maxBleedOutTime;
         reviveTimer = 0f;
-        lastDisplayedTime = -1; // Reseteamos el control del texto
+        lastDisplayedText = "";
 
         transform.eulerAngles = new Vector3(90f, transform.eulerAngles.y, transform.eulerAngles.z);
 
@@ -181,49 +231,12 @@ public class HealthSystem : MonoBehaviourPun
         }
     }
 
-    private bool CheckForRevive()
-    {
-        bool isBeingRevived = false;
-
-        Collider[] colliders = Physics.OverlapSphere(transform.position, reviveRadius);
-        foreach (Collider col in colliders)
-        {
-            if (col.CompareTag("Player") && col.gameObject != this.gameObject)
-            {
-                HealthSystem allyHealth = col.GetComponent<HealthSystem>();
-
-                if (allyHealth != null && !allyHealth.isDowned)
-                {
-                    isBeingRevived = true;
-                    break;
-                }
-            }
-        }
-
-        if (isBeingRevived)
-        {
-            reviveTimer += Time.deltaTime;
-
-            if (reviveTimer >= timeRequiredToRevive)
-            {
-                photonView.RPC("RPC_Revive", RpcTarget.All);
-            }
-        }
-        else
-        {
-            reviveTimer = 0f;
-        }
-
-        return isBeingRevived; // Devolvemos el estado para que el Update sepa si estabilizar
-    }
-
     [PunRPC]
     private void RPC_Revive()
     {
         isDowned = false;
         currentHealth = maxHealth / 2;
 
-        // Apagamos el texto flotante al levantarnos
         if (countdownTextObj != null) countdownTextObj.SetActive(false);
 
         transform.eulerAngles = new Vector3(0f, transform.eulerAngles.y, transform.eulerAngles.z);
@@ -257,18 +270,14 @@ public class HealthSystem : MonoBehaviourPun
             }
             else
             {
-                // 1. Liberamos la cámara (Nos hacemos fantasmas)
                 if (Camera.main != null)
                 {
                     Camera.main.gameObject.AddComponent<GhostCamera>();
                 }
 
-                // 2. ENVIAMOS LA INFORMACIÓN A LA API
                 API_LaOrden api = FindObjectOfType<API_LaOrden>();
                 if (api != null)
                 {
-                    // Por ahora hardcodeamos las kills en 15 para probar que funciona.
-                    // PhotonNetwork.NickName agarra el nombre que el jugador se puso en el lobby.
                     api.EnviarReporteMuerte(PhotonNetwork.NickName, 15);
                 }
             }
@@ -276,6 +285,7 @@ public class HealthSystem : MonoBehaviourPun
             PhotonNetwork.Destroy(gameObject);
         }
     }
+
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.green;
