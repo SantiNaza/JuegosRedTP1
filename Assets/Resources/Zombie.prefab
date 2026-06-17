@@ -230,6 +230,7 @@ MonoBehaviour:
   destroyOnDeath: 1
   isPlayer: 0
   isDowned: 0
+  isPressingE: 0
   maxBleedOutTime: 15
   timeRequiredToRevive: 5
   reviveRadius: 2
