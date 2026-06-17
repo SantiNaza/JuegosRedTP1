@@ -57,6 +57,7 @@ MonoBehaviour:
   - RPC_MostrarTextoRecarga
   - RPC_ActualizarTextoCaido
   - RPC_CrearTextoCuentaRegresiva
+  - RPC_DestruirCargador
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 1

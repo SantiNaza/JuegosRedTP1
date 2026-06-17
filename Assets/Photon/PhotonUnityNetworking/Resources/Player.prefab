@@ -754,6 +754,7 @@ MonoBehaviour:
   fireRate: 0.5
   magCapacity: 15
   reloadSpeed: 2
+  droppedMagPrefabName: CargadorSuelto
   cargadoresActuales: 3
   firePoint: {fileID: 6794958718673616309}
   meleeDamage: 50
