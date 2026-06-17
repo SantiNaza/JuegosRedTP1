@@ -1,0 +1,364 @@
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using TMPro;
+using Photon.Pun;
+using Photon.Realtime;
+
+public class RoomPhotonManager : MonoBehaviourPunCallbacks
+{
+    public static RoomPhotonManager instance;
+
+    public Action OnRoom;
+
+    [Header("Scenes")]
+    [SerializeField] private string mainMenuSceneName = "Menu";
+    [SerializeField] private string gameSceneName = "Gameplay";
+
+    [Header("Room Settings")]
+    [SerializeField] private TMP_InputField roomNameInput;
+    [SerializeField] private byte maxPlayersAmount = 5;
+
+    [Header("Panels")]
+    [SerializeField] private GameObject panelRoom;
+    [SerializeField] private GameObject panelLobby;
+
+    [Header("Lobby UI")]
+    [SerializeField] private GameObject startGameButton;
+    [SerializeField] private TMP_Text lobbyText;
+    [SerializeField] private TMP_Text statusText;
+
+    [Header("Room List UI")]
+    [SerializeField] private Transform roomListContent;
+    [SerializeField] private GameObject roomItemPrefab;
+
+    private Dictionary<string, RoomInfo> cachedRoomList = new Dictionary<string, RoomInfo>();
+
+    private bool backToMainMenu;
+
+    private void Awake()
+    {
+        instance = this;
+
+        PhotonNetwork.AutomaticallySyncScene = true;
+        PhotonNetwork.ConnectUsingSettings();
+
+        ShowRoomPanel();
+    }
+
+    public override void OnConnectedToMaster()
+    {
+        Debug.Log("Connected to Server");
+        PhotonNetwork.JoinLobby();
+    }
+
+    public override void OnJoinedLobby()
+    {
+        Debug.Log("Joined Lobby");
+        SetStatus("Conectado. Pod�s crear o unirte a una room.");
+    }
+
+    public void CreateRoom()
+    {
+        if (!PhotonNetwork.IsConnectedAndReady)
+        {
+            SetStatus("Todav�a no est�s conectado.");
+            return;
+        }
+
+        AudioManager.Instance.PlayButtonClick();
+
+        string roomName = GetRoomName();
+
+        if (string.IsNullOrEmpty(roomName))
+        {
+            SetStatus("Escrib� un nombre para crear la room.");
+            return;
+        }
+
+        RoomOptions roomOptions = new RoomOptions();
+
+        roomOptions.IsVisible = true;
+        roomOptions.IsOpen = true;
+        roomOptions.MaxPlayers = maxPlayersAmount;
+
+        roomOptions.PlayerTtl = 3000;
+        roomOptions.EmptyRoomTtl = 60000;
+        roomOptions.BroadcastPropsChangeToAll = true;
+
+        SetStatus("Creando room: " + roomName);
+
+        PhotonNetwork.CreateRoom(roomName, roomOptions);
+    }
+
+    public void JoinRoom()
+    {
+        if (!PhotonNetwork.IsConnectedAndReady)
+        {
+            SetStatus("Todav�a no est�s conectado.");
+            return;
+        }
+
+        AudioManager.Instance.PlayButtonClick();
+
+        string roomName = GetRoomName();
+
+        if (string.IsNullOrEmpty(roomName))
+        {
+            SetStatus("Escrib� el nombre de la room.");
+            return;
+        }
+
+        SetStatus("Entrando a room: " + roomName);
+
+        PhotonNetwork.JoinRoom(roomName);
+    }
+
+    public override void OnJoinedRoom()
+    {
+
+        string roomName = PhotonNetwork.CurrentRoom.Name;
+        int playerCount = PhotonNetwork.CurrentRoom.PlayerCount;
+
+        Debug.Log("Joined Room: " + roomName);
+        Debug.Log("Player Count: " + playerCount);
+        Debug.Log("Is Master Client: " + PhotonNetwork.IsMasterClient);
+
+        SetStatus("Entraste a la room: " + roomName);
+
+        OnRoom?.Invoke();
+
+        ShowLobbyPanel();
+        UpdateLobbyInfo();
+    }
+
+    public void StartGame()
+    {
+        if (!PhotonNetwork.IsMasterClient)
+        {
+            Debug.LogWarning("Solo el Host puede iniciar la partida.");
+            return;
+        }
+
+        PhotonNetwork.CurrentRoom.IsOpen = false;
+        PhotonNetwork.CurrentRoom.IsVisible = false;
+
+        PhotonNetwork.LoadLevel(gameSceneName);
+    }
+
+    public void BackToRoomMenu()
+    {
+        if (PhotonNetwork.InRoom)
+        {
+            AudioManager.Instance.PlayButtonClick();
+            PhotonNetwork.LeaveRoom();
+        }
+        else
+        {
+            ShowRoomPanel();
+        }
+    }
+
+    public void BackToMainMenu()
+    {
+        backToMainMenu = true;
+
+        if (PhotonNetwork.InRoom)
+        {
+            AudioManager.Instance.PlayButtonClick();
+            PhotonNetwork.LeaveRoom();
+            return;
+        }
+
+        SceneManager.LoadScene(mainMenuSceneName);
+    }
+
+    public override void OnLeftRoom()
+    {
+        if (backToMainMenu)
+        {
+            backToMainMenu = false;
+            SceneManager.LoadScene(mainMenuSceneName);
+            return;
+        }
+
+        ShowRoomPanel();
+    }
+
+    public override void OnPlayerEnteredRoom(Player newPlayer)
+    {
+        UpdateLobbyInfo();
+    }
+
+    public override void OnPlayerLeftRoom(Player otherPlayer)
+    {
+        UpdateLobbyInfo();
+    }
+
+    public override void OnMasterClientSwitched(Player newMasterClient)
+    {
+        UpdateLobbyInfo();
+    }
+
+    public override void OnRoomListUpdate(List<RoomInfo> roomList)
+    {
+        UpdateCachedRoomList(roomList);
+    }
+
+    private void UpdateCachedRoomList(List<RoomInfo> roomList)
+    {
+        foreach (RoomInfo info in roomList)
+        {
+            if (info.RemovedFromList)
+            {
+                cachedRoomList.Remove(info.Name);
+            }
+            else
+            {
+                cachedRoomList[info.Name] = info;
+            }
+        }
+
+        // ESTO ES NUEVO: Despu�s de actualizar los datos, dibujamos la UI
+        UpdateRoomListView();
+    }
+
+    private void UpdateRoomListView()
+    {
+        // 1. Limpiamos la lista visual vieja para no duplicar botones
+        foreach (Transform child in roomListContent)
+        {
+            Destroy(child.gameObject);
+        }
+
+        // 2. Por cada room en nuestro diccionario, creamos un bot�n nuevo
+        foreach (RoomInfo info in cachedRoomList.Values)
+        {
+            // Filtramos las que est�n cerradas, invisibles o borradas
+            if (!info.IsOpen || !info.IsVisible || info.RemovedFromList)
+                continue;
+
+            // Instanciamos el prefab adentro del contenedor
+            GameObject item = Instantiate(roomItemPrefab, roomListContent);
+
+            // Le pasamos la info al script del bot�n
+           // item.GetComponent<RoomItem>().Setup(info);
+        }
+    }
+
+    public void JoinSpecificRoom(string specificRoomName)
+    {
+        if (!PhotonNetwork.IsConnectedAndReady)
+        {
+            SetStatus("Todav�a no est�s conectado.");
+            return;
+        }
+
+        SetStatus("Entrando a room: " + specificRoomName);
+        PhotonNetwork.JoinRoom(specificRoomName);
+    }
+
+    private void ShowRoomPanel()
+    {
+        if (panelRoom != null)
+        {
+            panelRoom.SetActive(true);
+        }
+
+        if (panelLobby != null)
+        {
+            panelLobby.SetActive(false);
+        }
+    }
+
+    private void ShowLobbyPanel()
+    {
+        if (panelRoom != null)
+        {
+            panelRoom.SetActive(false);
+        }
+
+        if (panelLobby != null)
+        {
+            panelLobby.SetActive(true);
+        }
+    }
+
+    private void UpdateLobbyInfo()
+    {
+        if (!PhotonNetwork.InRoom)
+        {
+            return;
+        }
+
+        bool isHost = PhotonNetwork.IsMasterClient;
+
+        if (startGameButton != null)
+        {
+            startGameButton.SetActive(isHost);
+        }
+
+        if (lobbyText != null)
+        {
+            lobbyText.text =
+                "Room: " + PhotonNetwork.CurrentRoom.Name +
+                "\nPlayers: " + PhotonNetwork.CurrentRoom.PlayerCount + " / " + PhotonNetwork.CurrentRoom.MaxPlayers +
+                "\nHost: " + PhotonNetwork.MasterClient.NickName;
+        }
+    }
+
+    public override void OnCreateRoomFailed(short returnCode, string message)
+    {
+        SetStatus("No se pudo crear la room: " + message);
+        Debug.LogWarning("Create Room Failed: " + message);
+    }
+
+    public override void OnJoinRoomFailed(short returnCode, string message)
+    {
+        switch (returnCode)
+        {
+            case ErrorCode.GameFull:
+                SetStatus("Partida llena");
+                break;
+            case ErrorCode.GameDoesNotExist:
+                SetStatus("Partida no encontrada");
+                break;
+            case ErrorCode.GameClosed:
+                SetStatus("Partida en curso");
+                break;
+            default:
+                SetStatus("No se pudo entrar a la room: " + message);
+                break;
+        }
+
+        Debug.LogWarning("Join Room Failed (" + returnCode + "): " + message);
+    }
+
+    public override void OnDisconnected(DisconnectCause cause)
+    {
+        SetStatus("Desconectado de Photon: " + cause);
+        Debug.LogWarning("Disconnected: " + cause);
+    }
+
+    private string GetRoomName()
+    {
+        if (roomNameInput == null)
+        {
+            Debug.LogWarning("Room Name Input no est� asignado en el Inspector.");
+            return "";
+        }
+
+        return roomNameInput.text.Trim();
+    }
+
+    private void SetStatus(string message)
+    {
+        Debug.Log(message);
+
+        if (statusText != null)
+        {
+            statusText.text = message;
+        }
+    }
+}
