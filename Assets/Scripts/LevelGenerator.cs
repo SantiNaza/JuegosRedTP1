@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AI;
 
 public class LevelGenerator : MonoBehaviour
 {
@@ -31,6 +32,13 @@ public class LevelGenerator : MonoBehaviour
     public List<Vector3> doorPositions = new List<Vector3>();
     public List<Vector3> extractionPositions = new List<Vector3>();
 
+    [Header("NavMesh (bake por API)")]
+    public int agentTypeID = 0; // 0 = Humanoid (el agente por defecto)
+    public float boundsPadding = 4f;
+
+    private NavMeshData navMeshData;
+    private readonly List<NavMeshBuildSource> navSources = new List<NavMeshBuildSource>();
+
     // Gris RGB(100,100,100) en espacio 0..1
     private static readonly Color Gray = new Color(100f / 255f, 100f / 255f, 100f / 255f);
 
@@ -48,13 +56,71 @@ public class LevelGenerator : MonoBehaviour
             for (int y = 0; y < mapTexture.height; y++)
             {
                 Color pixelColor = mapTexture.GetPixel(x, y);
-                if (pixelColor.a < 0.1f) continue; // Ignorar transparentes
+                if (pixelColor.a < 0.1f) continue;
 
-                // Aplicamos el offset en Y acá
                 Vector3 position = new Vector3(x * pixelOffset, yOffset, y * pixelOffset);
                 ProcessPixel(pixelColor, position);
             }
         }
+
+        // Horneamos el NavMesh con el mapa ya construido
+        BakeNavMesh();
+    }
+
+    private void BakeNavMesh()
+    {
+        // 1. Área que abarca todo el mapa
+        Bounds bounds = new Bounds(transform.position, Vector3.zero);
+        Renderer[] renderers = GetComponentsInChildren<Renderer>();
+
+        if (renderers.Length == 0)
+        {
+            Debug.LogWarning("No hay tiles para hornear el NavMesh.");
+            return;
+        }
+
+        foreach (Renderer r in renderers)
+            bounds.Encapsulate(r.bounds);
+
+        bounds.Expand(boundsPadding);
+
+        // 2. Recolectamos la geometría de los tiles
+        navSources.Clear();
+        List<NavMeshBuildMarkup> markups = new List<NavMeshBuildMarkup>();
+
+        NavMeshBuilder.CollectSources(
+            transform,
+            ~0,
+            NavMeshCollectGeometry.RenderMeshes,
+            0,
+            markups,
+            navSources
+        );
+
+        // 3. Configuración del agente  <<<<<< ACÁ van los ajustes del voxel/radio
+        NavMeshBuildSettings settings = NavMesh.GetSettingsByID(agentTypeID);
+
+        settings.agentRadius = 0.15f;   // agente chico para pasajes angostos
+        settings.agentHeight = 1.8f;
+        settings.agentClimb = 0.6f;     // mayor que el escalón del yOffset (0.5)
+        settings.agentSlope = 45f;
+        settings.voxelSize = 0.05f;     // <<<<<< ESTE es el voxel size
+        settings.overrideVoxelSize = true;
+
+        // 4. Construcción
+        navMeshData = NavMeshBuilder.BuildNavMeshData(
+            settings,
+            navSources,
+            bounds,
+            Vector3.zero,
+            Quaternion.identity
+        );
+
+        // 5. Limpiamos lo anterior y aplicamos
+        NavMesh.RemoveAllNavMeshData();
+        NavMesh.AddNavMeshData(navMeshData);
+
+        Debug.Log("NavMesh horneado por API en runtime. Fuentes: " + navSources.Count);
     }
 
     void ProcessPixel(Color color, Vector3 pos)

@@ -76,6 +76,8 @@ MonoBehaviour:
   - RPC_SetPressed
   - RPC_OpenForever
   - RPC_SyncPressingE
+  - RPC_ApagarEstacion
+  - RPC_ProcesarRescate
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 1

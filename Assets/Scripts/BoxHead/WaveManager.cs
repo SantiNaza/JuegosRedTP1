@@ -1,11 +1,12 @@
-using UnityEngine;
 using Photon.Pun;
 using System.Collections;
 using System.Collections.Generic;
-using Unity.Services.RemoteConfig;
+using System.Threading.Tasks;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
-using System.Threading.Tasks;
+using Unity.Services.RemoteConfig;
+using UnityEngine;
+using UnityEngine.AI;
 
 public class WaveManager : MonoBehaviourPun
 {
@@ -113,8 +114,18 @@ public class WaveManager : MonoBehaviourPun
             }
 
             Vector3 spawnPos = enemySpawnPoints[Random.Range(0, enemySpawnPoints.Count)];
-            PhotonNetwork.Instantiate(zombiePrefab.name, spawnPos, Quaternion.identity);
-            zombiesAlive++;
+
+            // Pegamos la posición al NavMesh más cercano (hasta 5m de distancia)
+            if (NavMesh.SamplePosition(spawnPos, out NavMeshHit hit, 5f, NavMesh.AllAreas))
+            {
+                spawnPos = hit.position;
+                PhotonNetwork.Instantiate(zombiePrefab.name, spawnPos, Quaternion.identity);
+                zombiesAlive++;
+            }
+            else
+            {
+                Debug.LogWarning("No se encontró NavMesh cerca del spawn de enemigos: " + spawnPos);
+            }
 
             yield return new WaitForSeconds(timeBetweenSpawns);
         }
