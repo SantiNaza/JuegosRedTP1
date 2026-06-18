@@ -21,6 +21,7 @@ public class CharacterSelector : MonoBehaviourPunCallbacks
 
     const string KEY_COLOR = "color";
     const string KEY_READY = "ready";
+    const string PREF_COLOR = "preferred_color"; // NUEVO: clave de PlayerPrefs
 
     int currentIndex = -1;
     bool confirmed = false;
@@ -57,6 +58,16 @@ public class CharacterSelector : MonoBehaviourPunCallbacks
     void SelectInitialColor()
     {
         int len = GameColors.Palette.Length;
+
+        // 1) intentar el color preferido guardado de la sesión anterior
+        int preferred = PlayerPrefs.GetInt(PREF_COLOR, -1);
+        if (preferred >= 0 && preferred < len && !IsTaken(preferred))
+        {
+            SetColor(preferred);
+            return;
+        }
+
+        // 2) si no hay preferencia o está ocupado, caer al esquema por ActorNumber
         int start = (PhotonNetwork.LocalPlayer.ActorNumber - 1) % len;
         if (start < 0) start = 0;
 
@@ -83,8 +94,12 @@ public class CharacterSelector : MonoBehaviourPunCallbacks
     {
         currentIndex = index;
         if (characterRenderer != null)
-            characterRenderer.material.color = GameColors.Palette[index]; // preview local
+            characterRenderer.material.color = GameColors.Palette[index];
+
         PhotonNetwork.LocalPlayer.SetCustomProperties(new Hashtable { { KEY_COLOR, index } });
+
+        PlayerPrefs.SetInt(PREF_COLOR, index); // NUEVO: recordar la preferencia
+        PlayerPrefs.Save();
     }
 
     void Confirm()
