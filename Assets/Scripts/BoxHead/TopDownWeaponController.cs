@@ -238,7 +238,8 @@ public class TopDownWeaponController : MonoBehaviourPun
         Bullet bulletScript = bulletObj.GetComponent<Bullet>();
         if (bulletScript != null)
         {
-            bulletScript.SetDamage(gunDamage);
+            // NUEVO: Le pasamos también el ViewID de tu jugador
+            bulletScript.SetDamage(gunDamage, photonView.ViewID);
         }
     }
 
@@ -262,7 +263,8 @@ public class TopDownWeaponController : MonoBehaviourPun
                 HealthSystem targetHealth = col.GetComponent<HealthSystem>();
                 if (targetHealth != null)
                 {
-                    targetView.RPC("RPC_TakeDamage", RpcTarget.All, kickDamage);
+                    // NUEVO: Sumamos el photonView.ViewID al final
+                    targetView.RPC("RPC_TakeDamage", RpcTarget.All, kickDamage, photonView.ViewID);
                 }
                 targetView.RPC("RPC_ApplyKnockback", RpcTarget.MasterClient, direccionEmpuje * kickForce);
             }

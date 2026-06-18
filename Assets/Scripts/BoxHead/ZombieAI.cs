@@ -69,7 +69,7 @@ public class ZombieAI : MonoBehaviourPun
         if (playerHealth != null)
         {
             // Le enviamos el daño a través de la red
-            playerHealth.photonView.RPC("RPC_TakeDamage", RpcTarget.All, attackDamage);
+            playerHealth.photonView.RPC("RPC_TakeDamage", RpcTarget.All, attackDamage, 0);
         }
     }
 

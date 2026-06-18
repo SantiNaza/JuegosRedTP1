@@ -186,7 +186,7 @@ public class HealthSystem : MonoBehaviourPun
     // --- LÓGICA DE DAÑO Y REVIVIR ---
 
     [PunRPC]
-    public void RPC_TakeDamage(float damage)
+    public void RPC_TakeDamage(float damage, int shooterViewID)
     {
         if (isDowned) return;
 
@@ -200,6 +200,17 @@ public class HealthSystem : MonoBehaviourPun
             }
             else
             {
+                // ¡EL ZOMBI MURIÓ!
+                // Buscamos quién fue el tirador
+                PhotonView shooter = PhotonView.Find(shooterViewID);
+
+                // Si el tirador existe, y es MI jugador en MI computadora, me sumo un punto
+                if (shooter != null && shooter.IsMine)
+                {
+                    API_LaOrden.misKillsLocales++;
+                    Debug.Log("¡Zombi eliminado! Kills actuales: " + API_LaOrden.misKillsLocales);
+                }
+
                 Die();
             }
         }
@@ -270,6 +281,7 @@ public class HealthSystem : MonoBehaviourPun
             }
             else
             {
+                // Lógica si el que muere definitivamente es un jugador
                 if (Camera.main != null)
                 {
                     Camera.main.gameObject.AddComponent<GhostCamera>();
@@ -278,7 +290,8 @@ public class HealthSystem : MonoBehaviourPun
                 API_LaOrden api = FindObjectOfType<API_LaOrden>();
                 if (api != null)
                 {
-                    api.EnviarReporteMuerte(PhotonNetwork.NickName, 15);
+                    // Mandamos nuestro nombre, nuestras kills, y el tiempo que duramos vivos
+                    api.EnviarReporteMuerte(PhotonNetwork.NickName, API_LaOrden.misKillsLocales, Time.timeSinceLevelLoad);
                 }
             }
 

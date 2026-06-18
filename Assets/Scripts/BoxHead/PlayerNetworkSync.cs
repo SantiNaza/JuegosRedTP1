@@ -1,46 +1,94 @@
 using UnityEngine;
 using Photon.Pun;
-using System;
+using ExitGames.Client.Photon; // Librería obligatoria para el PhotonPeer
+
+// 1. Definimos el Struct que pidió la cátedra
+public struct PlayerStats
+{
+    public float vidaActual;
+    public int cargador;
+    public int nivelMejoras;
+}
 
 public class PlayerNetworkSync : MonoBehaviourPun, IPunObservable
 {
     private HealthSystem healthSystem;
     private TopDownWeaponController weaponController;
 
-    // ¡Modificamos a 9 bytes!
-    // float (Salud) = 4 bytes
-    // int (Cargadores) = 4 bytes
-    // bool (isPressingE) = 1 byte
-    // Total = 9 bytes de puro rendimiento.
-    private byte[] syncBuffer = new byte[9];
-
     void Awake()
     {
         healthSystem = GetComponent<HealthSystem>();
         weaponController = GetComponent<TopDownWeaponController>();
+
+        // 2. REGISTRO EN PHOTON: Le enseñamos a la red qué es un "PlayerStats"
+        // Le pasamos el tipo, una letra única para identificarlo (ej: 'S'), y los métodos de traducción.
+        PhotonPeer.RegisterType(typeof(PlayerStats), (byte)'S', SerializePlayerStats, DeserializePlayerStats);
     }
+
+    // ==========================================
+    // TRADUCTORES DEL STRUCT (Requisito de RegisterType)
+    // ==========================================
+
+    public static byte[] SerializePlayerStats(object customObject)
+    {
+        PlayerStats stats = (PlayerStats)customObject;
+
+        // float (4 bytes) + int (4 bytes) + int (4 bytes) = 12 bytes en total
+        byte[] bytes = new byte[12];
+
+        System.BitConverter.GetBytes(stats.vidaActual).CopyTo(bytes, 0);
+        System.BitConverter.GetBytes(stats.cargador).CopyTo(bytes, 4);
+        System.BitConverter.GetBytes(stats.nivelMejoras).CopyTo(bytes, 8);
+
+        return bytes;
+    }
+
+    public static object DeserializePlayerStats(byte[] data)
+    {
+        PlayerStats stats = new PlayerStats();
+
+        stats.vidaActual = System.BitConverter.ToSingle(data, 0);
+        stats.cargador = System.BitConverter.ToInt32(data, 4);
+        stats.nivelMejoras = System.BitConverter.ToInt32(data, 8);
+
+        return stats;
+    }
+
+    // ==========================================
+    // ENVÍO Y RECEPCIÓN (La tubería de datos)
+    // ==========================================
 
     public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
     {
         if (stream.IsWriting)
         {
-            BitConverter.GetBytes(healthSystem.currentHealth).CopyTo(syncBuffer, 0);
-            BitConverter.GetBytes(weaponController.cargadoresActuales).CopyTo(syncBuffer, 4);
+            // Creamos nuestro paquete local
+            PlayerStats misStats = new PlayerStats();
+            misStats.vidaActual = healthSystem.currentHealth;
 
-            // Agregamos el input de la tecla E al final del paquete (posición 8)
-            BitConverter.GetBytes(healthSystem.isPressingE).CopyTo(syncBuffer, 8);
+            if (weaponController != null)
+            {
+                misStats.cargador = weaponController.cargadoresActuales;
+            }
 
-            stream.SendNext(syncBuffer);
+            // Acá podrías conectar tu sistema de guardado local XOR para sumar el nivel total de las armas
+            misStats.nivelMejoras = 1;
+
+            // Photon recibe el struct. 
+            // Gracias al "Unreliable On Change" de tu PhotonView, ESTO ES SOLO DELTA.
+            stream.SendNext(misStats);
         }
         else
         {
-            byte[] receivedBuffer = (byte[])stream.ReceiveNext();
+            // Las compus de tus compañeros reciben y aplican el struct
+            PlayerStats statsRecibidos = (PlayerStats)stream.ReceiveNext();
 
-            healthSystem.currentHealth = BitConverter.ToSingle(receivedBuffer, 0);
-            weaponController.cargadoresActuales = BitConverter.ToInt32(receivedBuffer, 4);
+            healthSystem.currentHealth = statsRecibidos.vidaActual;
 
-            // Leemos si el compañero está apretando la E
-            healthSystem.isPressingE = BitConverter.ToBoolean(receivedBuffer, 8);
+            if (weaponController != null)
+            {
+                weaponController.cargadoresActuales = statsRecibidos.cargador;
+            }
         }
     }
 }

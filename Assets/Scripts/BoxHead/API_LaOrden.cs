@@ -9,18 +9,24 @@ public class ReporteMuerte
 {
     public string agente;
     public int kills;
+    public float tiempo; // Agregamos el tiempo de partida
 }
 
 public class API_LaOrden : MonoBehaviour
 {
-    // ¡PEGÁ TU URL DE APPS SCRIPT ACÁ!
+    // Tu URL ya está pegada acá
     private string webAppUrl = "https://script.google.com/macros/s/AKfycbzVu0Kxx6gFolsUGAUzp5slYJzxEw2xNJR0Va4F0Ztz_PhnHv6jiWwPwx9l1wLcW6uh/exec";
 
-    public void EnviarReporteMuerte(string nombreAgente, int totalKills)
+    // Variable global para contar los zombis que matamos NOSOTROS
+    public static int misKillsLocales = 0;
+
+    // Actualizamos el método para que pida el tiempo
+    public void EnviarReporteMuerte(string nombreAgente, int totalKills, float tiempoPartida)
     {
         ReporteMuerte reporte = new ReporteMuerte();
         reporte.agente = nombreAgente;
         reporte.kills = totalKills;
+        reporte.tiempo = tiempoPartida;
 
         string jsonPayload = JsonConvert.SerializeObject(reporte);
         StartCoroutine(EnviarPost(jsonPayload));
@@ -43,7 +49,7 @@ public class API_LaOrden : MonoBehaviour
             }
             else
             {
-                Debug.Log("¡Reporte de baja recibido con éxito! Respuesta: " + www.downloadHandler.text);
+                Debug.Log("¡Reporte recibido con éxito! Respuesta: " + www.downloadHandler.text);
             }
         }
     }
