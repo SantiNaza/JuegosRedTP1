@@ -721,6 +721,7 @@ MonoBehaviour:
   maxBleedOutTime: 15
   timeRequiredToRevive: 3
   reviveRadius: 2
+  chapasRecogidas: 
 --- !u!114 &2368473593385675097
 MonoBehaviour:
   m_ObjectHideFlags: 0
