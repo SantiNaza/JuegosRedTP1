@@ -69,6 +69,9 @@ public class ZonaDeExtraccion : MonoBehaviourPun
     {
         this.enabled = false;
 
+        // CONGELAMOS EL TIEMPO AL INSTANTE
+        Time.timeScale = 0f;
+
         // MOSTRAMOS EL MENSAJE FINAL
         if (HUDManager.Instance != null)
         {

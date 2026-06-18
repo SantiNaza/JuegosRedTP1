@@ -68,8 +68,9 @@ public class TopDownWeaponController : MonoBehaviourPun
 
     void Update()
     {
-        // Esto protege perfectamente que nadie controle a un jugador ajeno
-        if (!photonView.IsMine || isReloading) return;
+        // Esto protege perfectamente que nadie controle a un jugador ajeno.
+        // NUEVO: Agregamos || Time.timeScale == 0f para bloquear todo si el juego se pausó (Ej: Al ganar)
+        if (!photonView.IsMine || isReloading || Time.timeScale == 0f) return;
 
         // Si estamos dando la patada, bloqueamos la mira para permitir la inclinación al cielo
         if (!isMeleeAttacking)
@@ -288,6 +289,7 @@ public class TopDownWeaponController : MonoBehaviourPun
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position + (transform.forward * 1f), meleeRange);
     }
+
     [PunRPC]
     public void RPC_AnimacionMelee()
     {
