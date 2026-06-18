@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.Networking;
 using System.Collections;
+using System.Collections.Generic;
 using Newtonsoft.Json;
 
 [System.Serializable]
@@ -11,28 +12,32 @@ public class ReporteMuerte
     public float tiempo;
 }
 
+// NUEVO: La estructura para decodificar lo que bajamos
+[System.Serializable]
+public class ReporteDescargado
+{
+    public string agente;
+    public int kills;
+    public string tiempo;
+}
+
 public class API_LaOrden : MonoBehaviour
 {
     private string webAppUrl = "https://script.google.com/macros/s/AKfycbzVu0Kxx6gFolsUGAUzp5slYJzxEw2xNJR0Va4F0Ztz_PhnHv6jiWwPwx9l1wLcW6uh/exec";
 
     public static int misKillsLocales = 0;
-
-    // NUEVO: Candado de seguridad
     public static bool yaEnviado = false;
 
     void Awake()
     {
-        // Al arrancar un nivel nuevo, reseteamos el candado y las kills
         yaEnviado = false;
         misKillsLocales = 0;
     }
 
     public void EnviarReporteMuerte(string nombreAgente, int totalKills, float tiempoPartida)
     {
-        // Si ya mandamos datos en esta partida, abortamos para evitar duplicados
         if (yaEnviado) return;
-
-        yaEnviado = true; // Cerramos el candado
+        yaEnviado = true;
 
         ReporteMuerte reporte = new ReporteMuerte();
         reporte.agente = nombreAgente;
@@ -40,11 +45,12 @@ public class API_LaOrden : MonoBehaviour
         reporte.tiempo = tiempoPartida;
 
         string jsonPayload = JsonConvert.SerializeObject(reporte);
-        StartCoroutine(EnviarPost(jsonPayload));
+        StartCoroutine(EnviarPostYDescargar(jsonPayload));
     }
 
-    private IEnumerator EnviarPost(string json)
+    private IEnumerator EnviarPostYDescargar(string json)
     {
+        // 1. SUBIMOS NUESTROS DATOS
         using (UnityWebRequest www = new UnityWebRequest(webAppUrl, "POST"))
         {
             byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(json);
@@ -56,12 +62,46 @@ public class API_LaOrden : MonoBehaviour
 
             if (www.result == UnityWebRequest.Result.ConnectionError || www.result == UnityWebRequest.Result.ProtocolError)
             {
-                Debug.LogError("Error de transmisión a la base: " + www.error);
-                yaEnviado = false; // Si hubo un error de internet, abrimos el candado para reintentar
+                Debug.LogError("Error de transmisión: " + www.error);
+                yaEnviado = false;
+                yield break; // Cortamos acá si falló
+            }
+        }
+
+        // 2. Esperamos 2 segundos para darle tiempo a Google de guardar los datos de todos los amigos muertos
+        yield return new WaitForSeconds(2f);
+
+        // 3. DESCARGAMOS LOS ÚLTIMOS REGISTROS
+        using (UnityWebRequest wwwGet = UnityWebRequest.Get(webAppUrl))
+        {
+            yield return wwwGet.SendWebRequest();
+
+            if (wwwGet.result == UnityWebRequest.Result.ConnectionError || wwwGet.result == UnityWebRequest.Result.ProtocolError)
+            {
+                Debug.LogError("Error descargando archivos: " + wwwGet.error);
             }
             else
             {
-                Debug.Log("¡Reporte recibido con éxito! Respuesta: " + www.downloadHandler.text);
+                string jsonRespuesta = wwwGet.downloadHandler.text;
+
+                // Traducimos el JSON a una lista de C#
+                List<ReporteDescargado> ultimosReportes = JsonConvert.DeserializeObject<List<ReporteDescargado>>(jsonRespuesta);
+
+                // Armamos el texto estético de terminal
+                string textoTerminal = "ARCHIVOS ANALÓGICOS RECUPERADOS:\n----------------------------------\n";
+
+                foreach (ReporteDescargado rep in ultimosReportes)
+                {
+                    textoTerminal += $"> Agente {rep.agente} | Bajas: {rep.kills} | Extracción: {rep.tiempo}\n";
+                }
+
+                textoTerminal += "----------------------------------\nFIN DE TRANSMISIÓN.";
+
+                // Imprimimos los resultados en la pantalla negra de redundancia
+                if (HUDManager.Instance != null)
+                {
+                    HUDManager.Instance.MostrarMigracion(textoTerminal);
+                }
             }
         }
     }
