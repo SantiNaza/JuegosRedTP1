@@ -1,6 +1,7 @@
 using UnityEngine;
 using Photon.Pun;
 using Photon.Realtime;
+using System.Collections;
 
 public class EstacionResurreccion : MonoBehaviourPun
 {
@@ -31,7 +32,6 @@ public class EstacionResurreccion : MonoBehaviourPun
                         yaUsada = true;
                         if (HUDManager.Instance != null) HUDManager.Instance.OcultarTextoExtraccion();
 
-                        // Rescatamos SOLO AL PRIMERO de la lista (Índice 0)
                         int actorARevivir = hs.chapasRecogidas[0];
                         photonView.RPC("RPC_ActivarEstacion", RpcTarget.MasterClient, hs.photonView.ViewID, actorARevivir);
                     }
@@ -55,20 +55,26 @@ public class EstacionResurreccion : MonoBehaviourPun
 
         Player agenteCaido = PhotonNetwork.CurrentRoom.GetPlayer(actorARevivir);
 
-        // Si el jugador sigue conectado en la sala, lo revivimos
         if (agenteCaido != null)
         {
+            // Mandamos el mensaje para que reviva
             photonView.RPC("RPC_RespawnAgente", agenteCaido, transform.position, nombrePrefabJugador);
         }
 
-        // Le quitamos esa chapa de la mochila al salvador
         PhotonView salvador = PhotonView.Find(viewIdSalvador);
         if (salvador != null)
         {
             salvador.RPC("RPC_RemoverPrimeraChapa", RpcTarget.All);
         }
 
-        // La estación se funde (1 solo uso)
+        // CORRECCIÓN 2: No destruimos la estación al instante. 
+        // Esperamos medio segundo para que los RPCs lleguen a destino.
+        StartCoroutine(DestruirConRetraso());
+    }
+
+    private IEnumerator DestruirConRetraso()
+    {
+        yield return new WaitForSeconds(0.5f);
         PhotonNetwork.Destroy(gameObject);
     }
 

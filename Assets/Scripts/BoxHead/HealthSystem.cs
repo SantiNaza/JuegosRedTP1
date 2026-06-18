@@ -19,7 +19,6 @@ public class HealthSystem : MonoBehaviourPun
     public float timeRequiredToRevive = 3f;
     public float reviveRadius = 2f;
 
-    // NUEVO: El inventario ordenado de chapas recogidas
     public List<int> chapasRecogidas = new List<int>();
 
     private GameObject countdownTextObj;
@@ -36,8 +35,24 @@ public class HealthSystem : MonoBehaviourPun
     {
         if (!photonView.IsMine) return;
 
-        if (isPlayer && !isDowned) isPressingE = Input.GetKey(KeyCode.E);
+        // CORRECCIÓN 1: Sincronizamos la tecla E a través de la red
+        if (isPlayer && !isDowned)
+        {
+            bool currentPress = Input.GetKey(KeyCode.E);
+            if (currentPress != isPressingE)
+            {
+                isPressingE = currentPress;
+                photonView.RPC("RPC_SyncPressingE", RpcTarget.Others, isPressingE);
+            }
+        }
+
         if (isPlayer && isDowned) ManejarEstadoCaido();
+    }
+
+    [PunRPC]
+    public void RPC_SyncPressingE(bool isPressing)
+    {
+        isPressingE = isPressing;
     }
 
     private void ManejarEstadoCaido()
@@ -54,6 +69,7 @@ public class HealthSystem : MonoBehaviourPun
                 if (allyHealth != null && !allyHealth.isDowned)
                 {
                     isSomeoneNear = true;
+                    // Ahora esto funciona perfecto porque el RPC mantiene la variable actualizada
                     if (allyHealth.isPressingE)
                     {
                         isSomeonePressingE = true;
@@ -240,16 +256,13 @@ public class HealthSystem : MonoBehaviourPun
             }
             else
             {
-                // 1. SOLTAMOS NUESTRA PROPIA CHAPA
                 SoltarChapaAlPiso(PhotonNetwork.LocalPlayer.ActorNumber);
 
-                // 2. SOLTAMOS TODAS LAS CHAPAS QUE LLEVÁBAMOS
                 foreach (int actorCaido in chapasRecogidas)
                 {
                     SoltarChapaAlPiso(actorCaido);
                 }
 
-                // Vaciamos la mochila (ya están todas en el piso)
                 photonView.RPC("RPC_LimpiarChapas", RpcTarget.All);
 
                 if (Camera.main != null) Camera.main.gameObject.AddComponent<GhostCamera>();
@@ -268,19 +281,14 @@ public class HealthSystem : MonoBehaviourPun
 
     private void SoltarChapaAlPiso(int actorNum)
     {
-        // El Y=0.1f hace que la chapa aparezca al ras del piso, evitando que flote.
-        // Los X y Z aleatorios siguen estando para que si caen 3 juntas, no se superpongan exactamente en el mismo pixel.
         Vector3 offset = new Vector3(Random.Range(-0.8f, 0.8f), 0.1f, Random.Range(-0.8f, 0.8f));
-
         GameObject chapa = PhotonNetwork.Instantiate("ChapaPrefab", transform.position + offset, Quaternion.identity);
         chapa.GetComponent<PhotonView>().RPC("RPC_ConfigurarChapa", RpcTarget.AllBuffered, actorNum);
     }
 
-    // --- MANEJO DE MOCHILA DE CHAPAS ---
     [PunRPC]
     public void RPC_RecogerChapa(int actorNumber)
     {
-        // Agregamos al final de la lista para respetar el orden de recogida
         if (photonView.IsMine && !chapasRecogidas.Contains(actorNumber))
         {
             chapasRecogidas.Add(actorNumber);
@@ -304,25 +312,16 @@ public class HealthSystem : MonoBehaviourPun
 
     public void Heal(float amount)
     {
-        if (amount <= 0f)
-            return;
-
-        // Un jugador caído no se cura con el item (se revive con la E)
-        if (isDowned)
-            return;
-
+        if (amount <= 0f) return;
+        if (isDowned) return;
         photonView.RPC(nameof(RPC_Heal), RpcTarget.All, amount);
     }
 
     [PunRPC]
     public void RPC_Heal(float amount)
     {
-        if (isDowned)
-            return;
-
+        if (isDowned) return;
         currentHealth = Mathf.Min(currentHealth + amount, maxHealth);
-
-        Debug.Log("Curado +" + amount + " | Vida actual: " + currentHealth);
     }
 
     public void AplicarMejorasAgente(float vidaExtra, float reviveMejora, float desangradoExtra)
@@ -330,7 +329,7 @@ public class HealthSystem : MonoBehaviourPun
         maxHealth += vidaExtra;
         currentHealth = maxHealth;
         timeRequiredToRevive -= reviveMejora;
-        if (timeRequiredToRevive < 0.5f) timeRequiredToRevive = 0.5f; // piso de seguridad
+        if (timeRequiredToRevive < 0.5f) timeRequiredToRevive = 0.5f;
         maxBleedOutTime += desangradoExtra;
     }
 }
