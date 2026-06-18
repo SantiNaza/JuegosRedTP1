@@ -12,7 +12,7 @@ public class HealthSystem : MonoBehaviourPun
     public Renderer meshRenderer;
     private Color colorOriginal;
     private Coroutine flashCoroutine;
-    private bool isFlashing = false; // NUEVO: Candado para no pisar colores
+    private bool isFlashing = false; 
 
     [Header("Configuración de Jugador (Revivir)")]
     public bool isPlayer = false;
@@ -355,7 +355,7 @@ public class HealthSystem : MonoBehaviourPun
 
     private System.Collections.IEnumerator RutinaParpadeoDano()
     {
-        // 1. Solo memorizamos el color si NO estamos parpadeando ya.
+        // Solo memorizamos el color si NO estamos parpadeando ya.
         // Esto evita que si nos pegan 2 zombis a la vez, guardemos el color "Rojo" como original.
         if (!isFlashing)
         {
@@ -364,15 +364,15 @@ public class HealthSystem : MonoBehaviourPun
 
         isFlashing = true; // Cerramos el candado
 
-        // 2. Nos pintamos de rojo intenso
+        // Nos pintamos de rojo 
         meshRenderer.material.color = Color.red;
 
-        // 3. Esperamos la fracción de segundo
+        
         yield return new WaitForSeconds(0.1f);
 
-        // 4. Volvemos al color exacto (ya sea el verde del zombi, o tu color de red)
+        // Volvemos al color exacto (ya sea el verde del zombi, o tu color de red)
         meshRenderer.material.color = colorOriginal;
 
-        isFlashing = false; // Abrimos el candado para el próximo golpe
+        isFlashing = false;
     }
 }

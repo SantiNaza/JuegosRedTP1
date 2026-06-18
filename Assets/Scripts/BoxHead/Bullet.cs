@@ -8,7 +8,7 @@ public class Bullet : MonoBehaviourPun
     public float lifeTime = 3f;
 
     private float damage;
-    private int ownerViewID; // NUEVO: La credencial del jugador que disparó
+    private int ownerViewID; 
 
     void Start()
     {
@@ -23,7 +23,7 @@ public class Bullet : MonoBehaviourPun
         transform.Translate(Vector3.forward * speed * Time.deltaTime);
     }
 
-    // NUEVO: Ahora recibe también el ID del tirador
+  
     public void SetDamage(float weaponDamage, int shooterID)
     {
         damage = weaponDamage;

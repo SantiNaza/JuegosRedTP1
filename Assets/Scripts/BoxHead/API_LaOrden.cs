@@ -3,7 +3,7 @@ using UnityEngine.Networking;
 using System.Collections;
 using System.Collections.Generic;
 using Newtonsoft.Json;
-using Photon.Pun; // NUEVO: Obligatorio para saber cuántos somos
+using Photon.Pun; 
 
 [System.Serializable]
 public class ReporteMuerte
@@ -50,7 +50,7 @@ public class API_LaOrden : MonoBehaviour
 
     private IEnumerator EnviarPostYDescargar(string json)
     {
-        // 1. SUBIMOS NUESTROS DATOS
+
         using (UnityWebRequest www = new UnityWebRequest(webAppUrl, "POST"))
         {
             byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(json);
@@ -68,10 +68,10 @@ public class API_LaOrden : MonoBehaviour
             }
         }
 
-        // 2. Esperamos 2 segundos para darle tiempo a Google de guardar los datos de todos
+        // Esperamos 2 segundos para darle tiempo a Google de guardar los datos de todos
         yield return new WaitForSeconds(2f);
 
-        // 3. DESCARGAMOS LOS ÚLTIMOS REGISTROS
+        // DESCARGAMOS LOS ÚLTIMOS REGISTROS
         using (UnityWebRequest wwwGet = UnityWebRequest.Get(webAppUrl))
         {
             yield return wwwGet.SendWebRequest();
@@ -89,20 +89,19 @@ public class API_LaOrden : MonoBehaviour
 
                 string textoTerminal = "ARCHIVOS ANALÓGICOS RECUPERADOS:\n----------------------------------\n";
 
-                // --- LA MAGIA ACÁ ---
-                // 1. Preguntamos cuántos jugadores hay vivos/conectados en esta partida específica
+            
                 int jugadoresEnPartida = PhotonNetwork.CurrentRoom != null ? PhotonNetwork.CurrentRoom.PlayerCount : 1;
 
-                // 2. Calculamos desde qué índice arrancar a leer para agarrar SOLO los últimos de la lista
+                
                 int startIndex = Mathf.Max(0, ultimosReportes.Count - jugadoresEnPartida);
 
-                // 3. Iteramos únicamente sobre los que nos importan
+                
                 for (int i = startIndex; i < ultimosReportes.Count; i++)
                 {
                     ReporteDescargado rep = ultimosReportes[i];
                     textoTerminal += $"> Agente {rep.agente} | Bajas: {rep.kills} | Extracción: {rep.tiempo}\n";
                 }
-                // --------------------
+
 
                 textoTerminal += "----------------------------------\nFIN DE TRANSMISIÓN.";
 

@@ -25,10 +25,7 @@ public class PlayerNetworkSync : MonoBehaviourPun, IPunObservable
         PhotonPeer.RegisterType(typeof(PlayerStats), (byte)'S', SerializePlayerStats, DeserializePlayerStats);
     }
 
-    // ==========================================
-    // TRADUCTORES DEL STRUCT (Requisito de RegisterType)
-    // ==========================================
-
+  
     public static byte[] SerializePlayerStats(object customObject)
     {
         PlayerStats stats = (PlayerStats)customObject;
@@ -54,10 +51,7 @@ public class PlayerNetworkSync : MonoBehaviourPun, IPunObservable
         return stats;
     }
 
-    // ==========================================
-    // ENVÍO Y RECEPCIÓN (La tubería de datos)
-    // ==========================================
-
+    
     public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
     {
         if (stream.IsWriting)
@@ -75,7 +69,7 @@ public class PlayerNetworkSync : MonoBehaviourPun, IPunObservable
             misStats.nivelMejoras = 1;
 
             // Photon recibe el struct. 
-            // Gracias al "Unreliable On Change" de tu PhotonView, ESTO ES SOLO DELTA.
+            
             stream.SendNext(misStats);
         }
         else

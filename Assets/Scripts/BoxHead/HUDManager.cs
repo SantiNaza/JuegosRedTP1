@@ -3,7 +3,7 @@ using UnityEngine.UI;
 using TMPro;
 using Photon.Pun;
 using System.Collections;
-using UnityEngine.SceneManagement; // NUEVO: Para poder cargar el menú
+using UnityEngine.SceneManagement; // Para poder cargar el menú
 
 public class HUDManager : MonoBehaviour
 {
@@ -31,9 +31,7 @@ public class HUDManager : MonoBehaviour
     [Header("UI Notificaciones")]
     public TextMeshProUGUI textoNotificaciones;
 
-    // ==========================================
-    // NUEVO: UI DERROTA
-    // ==========================================
+ 
     [Header("UI Derrota")]
     public GameObject panelDerrota;
 
@@ -162,19 +160,17 @@ public class HUDManager : MonoBehaviour
         textoNotificaciones.gameObject.SetActive(false);
     }
 
-    // ==========================================
-    // NUEVO: SISTEMA DE DERROTA
-    // ==========================================
+    
     public void MostrarDerrota()
     {
         if (panelDerrota != null) panelDerrota.SetActive(true);
 
-        // Liberamos el cursor para que los jugadores puedan clickear el botón de salida
+        
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
     }
 
-    // Esta función la vas a conectar a un Botón en la pantalla de derrota
+    
     public void VolverAlMenuPrincipal()
     {
         StartCoroutine(RutinaSalir());
@@ -182,7 +178,7 @@ public class HUDManager : MonoBehaviour
 
     private IEnumerator RutinaSalir()
     {
-        // Restauramos el tiempo por si estaba pausado (ej: en medio de una migración)
+
         Time.timeScale = 1f; 
 
         if (PhotonNetwork.InRoom)
@@ -192,7 +188,7 @@ public class HUDManager : MonoBehaviour
             while (PhotonNetwork.InRoom) yield return null; 
         }
 
-        // Carga la escena del menú principal (asegurate de que se llame "Menu")
+        // Carga la escena del menú principal
         SceneManager.LoadScene("Menu"); 
     }
 }

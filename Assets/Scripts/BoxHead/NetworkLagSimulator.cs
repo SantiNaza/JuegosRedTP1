@@ -11,12 +11,12 @@ public class NetworkLagSimulator : MonoBehaviour
 
     void Update()
     {
-        // El botón mágico para prender y apagar
+        
         if (Input.GetKeyDown(KeyCode.F9))
         {
             enableSimulation = !enableSimulation;
 
-            // Si lo prendés y estaba todo en cero, le damos un lag inicial para que se note
+            // le damos un lag inicial para que se note
             if (enableSimulation && lagInMs == 0 && packetLossPercentage == 0)
             {
                 lagInMs = 200;
@@ -66,13 +66,13 @@ public class NetworkLagSimulator : MonoBehaviour
     {
         if (enableSimulation)
         {
-            // 1. Dibujamos la caja de fondo oscura
+            // 
             GUI.backgroundColor = new Color(0, 0, 0, 0.8f);
             Rect panelRect = new Rect(20, 20, 320, 140);
             GUI.Box(panelRect, "");
             GUI.Box(panelRect, ""); // Lo dibujamos dos veces para que sea más opaco
 
-            // 2. Estilos de texto
+            
             GUIStyle tituloStyle = new GUIStyle();
             tituloStyle.fontSize = 18;
             tituloStyle.fontStyle = FontStyle.Bold;
@@ -87,7 +87,7 @@ public class NetworkLagSimulator : MonoBehaviour
             atajosStyle.fontSize = 12;
             atajosStyle.normal.textColor = Color.gray;
 
-            // 3. Escribimos la info adentro de la caja
+
             GUI.Label(new Rect(30, 30, 300, 30), "SISTEMA DE REDUNDANCIA", tituloStyle);
 
             // Los valores se actualizan al instante cuando tocás las flechas

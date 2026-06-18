@@ -24,7 +24,7 @@ public class CharacterSelector : MonoBehaviourPunCallbacks
 
     const string KEY_COLOR = "color";
     const string KEY_READY = "ready";
-    const string PREF_COLOR = "preferred_color"; // NUEVO: clave de PlayerPrefs
+    const string PREF_COLOR = "preferred_color"; 
 
     int currentIndex = -1;
     bool confirmed = false;
@@ -70,7 +70,7 @@ public class CharacterSelector : MonoBehaviourPunCallbacks
         return false;
     }
 
-    // Arranca en un color distinto por jugador (basado en ActorNumber) → casi sin colisiones
+    // Arranca en un color distinto por jugador 
     void SelectInitialColor()
     {
         int len = GameColors.Palette.Length;
@@ -122,13 +122,13 @@ public class CharacterSelector : MonoBehaviourPunCallbacks
     {
         if (currentIndex < 0 || confirmed) return;
 
-        // --- SISTEMA ANTI-DUPLICADOS ---
+        // anti duplicados
         string miNombre = PhotonNetwork.NickName;
         if (string.IsNullOrWhiteSpace(miNombre)) miNombre = "Agente";
 
         foreach (Player p in PhotonNetwork.PlayerList)
         {
-            // Si el jugador no soy yo, y tiene mi mismo nombre...
+            
             if (!p.IsLocal && p.NickName == miNombre)
             {
                 // Le agregamos nuestro número de Actor para evitar el clon
@@ -168,7 +168,7 @@ public class CharacterSelector : MonoBehaviourPunCallbacks
     public override void OnPlayerLeftRoom(Player p) { UpdateStatus(); CheckAllReady(); }
     public override void OnMasterClientSwitched(Player p) => CheckAllReady();
 
-    // El de menor ActorNumber se queda el color, el otro cede. Determinístico en ambos clientes.
+    
     void ResolveCollision()
     {
         foreach (var p in PhotonNetwork.PlayerList)

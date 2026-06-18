@@ -303,11 +303,11 @@ public class TopDownWeaponController : MonoBehaviourPun
         // Memorizamos adónde estábamos apuntando
         Quaternion rotacionOriginal = transform.rotation;
 
-        // 0.25 segundos es el tiempo perfecto para un giro ninja rapidísimo
+    
         float duracion = 0.25f;
         float t = 0f;
 
-        // TORNADO KICK: Vuelta entera de 360 grados
+        // Vuelta entera de 360 grados
         while (t < duracion)
         {
             t += Time.deltaTime;
