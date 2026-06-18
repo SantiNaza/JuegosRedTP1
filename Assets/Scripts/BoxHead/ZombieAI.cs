@@ -19,11 +19,19 @@ public class ZombieAI : MonoBehaviourPun
     {
         agent = GetComponent<NavMeshAgent>();
 
-        // Solo el Master Client prende el agente y calcula la IA
-        if (PhotonNetwork.IsMasterClient)
+        if (!PhotonNetwork.IsMasterClient)
         {
-            agent.enabled = true;
+            agent.enabled = false;
+            return;
         }
+
+        // El agente maneja el movimiento: el Rigidbody NO debe pelear con él
+        Rigidbody rb = GetComponent<Rigidbody>();
+        if (rb != null) rb.isKinematic = true;
+
+        // Plantamos el agente sobre el NavMesh
+        if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 5f, NavMesh.AllAreas))
+            agent.Warp(hit.position);
     }
 
     void Update()
