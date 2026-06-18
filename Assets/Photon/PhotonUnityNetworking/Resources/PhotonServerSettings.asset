@@ -74,6 +74,7 @@ MonoBehaviour:
   - RPC_Respawn
   - RPC_SetDoorState
   - RPC_SetPressed
+  - RPC_OpenForever
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 1
