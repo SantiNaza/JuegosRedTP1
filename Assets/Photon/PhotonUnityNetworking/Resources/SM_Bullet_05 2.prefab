@@ -10,12 +10,12 @@ GameObject:
   m_Component:
   - component: {fileID: 380611056441782464}
   - component: {fileID: 4748876066153510335}
-  - component: {fileID: 2662071229401759467}
   - component: {fileID: 5823172860817432861}
-  - component: {fileID: -1326085569473901019}
-  - component: {fileID: -3467646608851466461}
+  - component: {fileID: 6481905468118610739}
+  - component: {fileID: 7763560926795317928}
+  - component: {fileID: -1289914604497962214}
   m_Layer: 0
-  m_Name: SM_Bullet_05 1
+  m_Name: SM_Bullet_05 2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -59,19 +59,6 @@ MonoBehaviour:
   sceneViewId: 0
   InstantiationId: 0
   isRuntimeInstantiated: 0
---- !u!135 &2662071229401759467
-SphereCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2989000923634411228}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 1
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Radius: 0.07697506
-  m_Center: {x: -0.00248681, y: -0.0052660704, z: -0.00199233}
 --- !u!54 &5823172860817432861
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -88,7 +75,7 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
---- !u!114 &-1326085569473901019
+--- !u!114 &6481905468118610739
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -97,15 +84,23 @@ MonoBehaviour:
   m_GameObject: {fileID: 2989000923634411228}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 08edc788f8c3e69488659433f5fca8bc, type: 3}
+  m_Script: {fileID: 11500000, guid: decee0f89b1cdb04b94664d2f7f9c20e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cargadoresQueDa: 1
-  respawnTime: 60
-  startupGraceTime: 1
-  visual: {fileID: 2989000923634411228}
-  triggerCollider: {fileID: 2662071229401759467}
---- !u!114 &-3467646608851466461
+--- !u!65 &7763560926795317928
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2989000923634411228}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 0.038515467, y: 0.15719299, z: 0.042655766}
+  m_Center: {x: -0.0005377099, y: -0.012386662, z: -0.00026733577}
+--- !u!114 &-1289914604497962214
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -126,8 +121,8 @@ MonoBehaviour:
   useEasingForFloating: 1
   floatHeight: 0
   floatSpeed: 0.4
-  startScale: {x: 0.5, y: 0.5, z: 0.5}
-  endScale: {x: 0.5, y: 0.5, z: 0.5}
+  startScale: {x: 1, y: 1, z: 1}
+  endScale: {x: 1, y: 1, z: 1}
   isScaling: 1
   useEasingForScaling: 1
   scaleLerpSpeed: 0.6
