@@ -93340,7 +93340,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0f94d621890fbc54ab745dd92135d5a3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ammoPickupPrefab: {fileID: 4997250639532511633, guid: bd9347e3f04bd774f8b6d08d8cb43b76, type: 3}
+  ammoPickupPrefab: {fileID: 2989000923634411228, guid: 74bcf7f5e3d4a594cb0be27b9085d0fc, type: 3}
   spawnHeightOffset: 0
 --- !u!4 &1885175498
 Transform:
