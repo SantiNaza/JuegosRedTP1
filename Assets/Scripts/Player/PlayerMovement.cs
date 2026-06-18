@@ -7,20 +7,27 @@ using System.Collections;
 public class PlayerMovement : MonoBehaviourPun
 {
     [Header("Movement")]
-    [SerializeField] private float moveSpeed = 5f;
-    [SerializeField] private float jumpForce = 7f;
+    public float moveSpeed = 5f;
+    public float jumpForce = 7f;
+
+    [Header("Sprint y Stamina")]
+    public float sprintMultiplier = 1.5f;
+    public float maxStamina = 4f; // Cuántos segundos puede correr sin cansarse
+    private float currentStamina;
+    private bool isExhausted = false; // Bandera para saber si se quedó sin aire
+    private GameObject sinAireTextObj;
 
     [Header("Ground Check")]
-    [SerializeField] private float groundCheckDistance = 1.1f;
-    [SerializeField] private LayerMask groundLayer;
+    public float groundCheckDistance = 1.1f;
+    public LayerMask groundLayer;
+
+    [Header("Configuración de Cámara")]
+    private Vector3 cameraOffset = new Vector3(0f, 12f, -6f);
+    private Vector3 anguloCamara = new Vector3(60f, 0f, 0f);
 
     private Rigidbody rb;
     private Vector3 moveInput;
-    
-    // NUEVO: Bandera para saber si estamos siendo empujados
     private bool isKnockedBack = false;
-
-    // Agregamos esta variable al principio de tu script PlayerMovement
     private TopDownWeaponController weaponController;
 
     private void Awake()
@@ -28,22 +35,30 @@ public class PlayerMovement : MonoBehaviourPun
         rb = GetComponent<Rigidbody>();
         weaponController = GetComponent<TopDownWeaponController>();
 
-        // SOLUCIÓN A LOS TROPEZONES: Congelamos la rotación para que no se caiga
         rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+
+        currentStamina = maxStamina; // Llenamos el aire al nacer
+    }
+
+    private void Start()
+    {
+        // El dueño del jugador le pide a la red que cree el texto para todos
+        if (photonView.IsMine)
+        {
+            photonView.RPC("RPC_CrearTextoSinAire", RpcTarget.AllBuffered);
+        }
     }
 
     private void Update()
     {
-        // Si no es nuestro jugador O si estamos siendo empujados, no procesamos inputs
-        if (!photonView.IsMine || isKnockedBack)
-        {
-            return;
-        }
+        if (!photonView.IsMine || isKnockedBack) return;
 
-        float horizontal = Input.GetAxisRaw("Horizontal"); // A / D
-        float vertical = Input.GetAxisRaw("Vertical");     // W / S
+        float horizontal = Input.GetAxisRaw("Horizontal");
+        float vertical = Input.GetAxisRaw("Vertical");
 
         moveInput = new Vector3(horizontal, 0f, vertical).normalized;
+
+        ManejarStamina();
 
         if (Input.GetKeyDown(KeyCode.Space) && IsGrounded())
         {
@@ -51,24 +66,63 @@ public class PlayerMovement : MonoBehaviourPun
         }
     }
 
+    private void ManejarStamina()
+    {
+        // ¿Nos estamos moviendo y apretando Shift?
+        bool isTryingToSprint = Input.GetKey(KeyCode.LeftShift) && moveInput.magnitude > 0;
+
+        // No podemos correr si el arma está en plena recarga
+        bool isReloading = weaponController != null && weaponController.isReloading;
+
+        if (isTryingToSprint && !isExhausted && !isReloading)
+        {
+            // Gastamos aire
+            currentStamina -= Time.deltaTime;
+
+            if (currentStamina <= 0)
+            {
+                currentStamina = 0;
+                isExhausted = true; // ¡Nos quedamos sin aire!
+                photonView.RPC("RPC_MostrarTextoSinAire", RpcTarget.All, true);
+            }
+        }
+        else
+        {
+            // Si no estamos corriendo, recuperamos aire
+            if (currentStamina < maxStamina)
+            {
+                currentStamina += Time.deltaTime;
+
+                // Si nos cansamos, hay que esperar a que el pulmón se llene al 100% para volver a correr
+                if (isExhausted && currentStamina >= maxStamina)
+                {
+                    isExhausted = false;
+                    photonView.RPC("RPC_MostrarTextoSinAire", RpcTarget.All, false);
+                }
+            }
+        }
+    }
+
     private void FixedUpdate()
     {
-        // No forzamos el movimiento normal si estamos en medio de un empuje
-        if (!photonView.IsMine || isKnockedBack)
-        {
-            return;
-        }
+        if (!photonView.IsMine || isKnockedBack) return;
 
         Move();
     }
 
     private void Move()
     {
-        // Revisamos si estamos recargando para reducir la velocidad a la mitad
         float currentSpeed = moveSpeed;
-        if (weaponController != null && weaponController.isReloading)
+        bool isReloading = weaponController != null && weaponController.isReloading;
+
+        // Jerarquía de velocidades: Recargar frena el sprint
+        if (isReloading)
         {
-            currentSpeed = moveSpeed / 2f;
+            currentSpeed = moveSpeed * 0.75f; // Penalización ajustada al 75%
+        }
+        else if (Input.GetKey(KeyCode.LeftShift) && !isExhausted && moveInput.magnitude > 0)
+        {
+            currentSpeed = moveSpeed * sprintMultiplier; // Aumento al 150%
         }
 
         Vector3 velocity = moveInput * currentSpeed;
@@ -82,70 +136,81 @@ public class PlayerMovement : MonoBehaviourPun
 
     private void Jump()
     {
-        rb.velocity = new Vector3(
-            rb.velocity.x,
-            0f,
-            rb.velocity.z
-        );
-
+        rb.velocity = new Vector3(rb.velocity.x, 0f, rb.velocity.z);
         rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
     }
 
     private bool IsGrounded()
     {
-        return Physics.Raycast(
-            transform.position,
-            Vector3.down,
-            groundCheckDistance,
-            groundLayer
-        );
+        return Physics.Raycast(transform.position, Vector3.down, groundCheckDistance, groundLayer);
     }
 
     // ==========================================
-    // SISTEMA DE EMPUJE (ADAPTADO PARA RIGIDBODY)
+    // CÁMARA Y TEXTOS 3D
+    // ==========================================
+    private void LateUpdate()
+    {
+        // 1. La cámara solo la mueve el dueño local de este personaje
+        if (photonView.IsMine && Camera.main != null)
+        {
+            Camera.main.transform.position = transform.position + cameraOffset;
+            Camera.main.transform.rotation = Quaternion.Euler(anguloCamara);
+        }
+
+        // 2. El texto flotante debe rotar hacia la cámara en LAS PANTALLAS DE TODOS
+        if (sinAireTextObj != null && sinAireTextObj.activeSelf && Camera.main != null)
+        {
+            sinAireTextObj.transform.rotation = Camera.main.transform.rotation;
+        }
+    }
+
+    // ==========================================
+    // SISTEMA DE EMPUJE
     // ==========================================
     [PunRPC]
     public void RPC_ApplyKnockback(Vector3 knockbackForce)
     {
-        // Solo el dueño del personaje calcula su propio empuje físico
         if (!photonView.IsMine) return;
-        
         StartCoroutine(KnockbackRoutine(knockbackForce));
     }
 
     private IEnumerator KnockbackRoutine(Vector3 force)
     {
-        isKnockedBack = true; // Pausamos el control del jugador temporalmente
-
-        // Frenamos en seco al personaje para que el impacto no se sume a la inercia anterior
-        rb.velocity = Vector3.zero; 
-
-        // Aplicamos la fuerza de golpe instantánea (Impulse)
+        isKnockedBack = true;
+        rb.velocity = Vector3.zero;
         rb.AddForce(force, ForceMode.Impulse);
-
-        // Esperamos el tiempo de "aturdimiento" / duración del empuje
         yield return new WaitForSeconds(0.2f);
-
-        isKnockedBack = false; // Devolvemos el control total al jugador
+        isKnockedBack = false;
     }
 
-    [Header("Configuración de Cámara")]
-    private Vector3 cameraOffset = new Vector3(0f, 12f, -6f); // Ajustá la altura y distancia acá
-    private Vector3 anguloCamara = new Vector3(60f, 0f, 0f);  // Inclinación mirando hacia abajo
-
-    // Mové esta función al final de tu script PlayerMovement.cs
-    private void LateUpdate()
+    // ==========================================
+    // RPCS PARA EL TEXTO DE STAMINA
+    // ==========================================
+    [PunRPC]
+    private void RPC_CrearTextoSinAire()
     {
-        // Solo movemos la cámara si este es nuestro jugador
-        if (!photonView.IsMine) return;
+        sinAireTextObj = new GameObject("TextoSinAire");
+        sinAireTextObj.transform.SetParent(this.transform);
+        // Lo ponemos un poquito más alto (3f) para que no se superponga con el "¡RECARGANDO!" (2.5f)
+        sinAireTextObj.transform.localPosition = new Vector3(0f, 3f, 0f);
 
-        if (Camera.main != null)
+        TextMesh tm = sinAireTextObj.AddComponent<TextMesh>();
+        tm.text = "¡SIN AIRE!";
+        tm.characterSize = 0.15f;
+        tm.fontSize = 40;
+        tm.anchor = TextAnchor.MiddleCenter;
+        tm.alignment = TextAlignment.Center;
+        tm.color = Color.cyan;
+
+        sinAireTextObj.SetActive(false);
+    }
+
+    [PunRPC]
+    public void RPC_MostrarTextoSinAire(bool mostrar)
+    {
+        if (sinAireTextObj != null)
         {
-            // 1. La cámara copia tu posición más el offset, pero NO es hija tuya
-            Camera.main.transform.position = transform.position + cameraOffset;
-
-            // 2. Clavamos la rotación para que siempre mire igual sin importar a dónde apuntes
-            Camera.main.transform.rotation = Quaternion.Euler(anguloCamara);
+            sinAireTextObj.SetActive(mostrar);
         }
     }
 }
