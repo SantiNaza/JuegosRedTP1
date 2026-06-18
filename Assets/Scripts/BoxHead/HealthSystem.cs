@@ -1,5 +1,6 @@
 using UnityEngine;
 using Photon.Pun;
+using System.Collections.Generic;
 
 public class HealthSystem : MonoBehaviourPun
 {
@@ -10,8 +11,6 @@ public class HealthSystem : MonoBehaviourPun
     [Header("Configuración de Jugador (Revivir)")]
     public bool isPlayer = false;
     public bool isDowned = false;
-
-    // NUEVO: Variable sincronizada por red para saber si aprieta la E
     public bool isPressingE = false;
 
     public float maxBleedOutTime = 15f;
@@ -20,35 +19,25 @@ public class HealthSystem : MonoBehaviourPun
     public float timeRequiredToRevive = 3f;
     public float reviveRadius = 2f;
 
+    // NUEVO: El inventario ordenado de chapas recogidas
+    public List<int> chapasRecogidas = new List<int>();
+
     private GameObject countdownTextObj;
     private TextMesh countdownTextMesh;
-    private string lastDisplayedText = ""; // Para no saturar la red mandando el mismo texto
+    private string lastDisplayedText = "";
 
     void Start()
     {
         currentHealth = maxHealth;
-
-        if (isPlayer)
-        {
-            photonView.RPC("RPC_CrearTextoCuentaRegresiva", RpcTarget.AllBuffered);
-        }
+        if (isPlayer) photonView.RPC("RPC_CrearTextoCuentaRegresiva", RpcTarget.AllBuffered);
     }
 
     void Update()
     {
         if (!photonView.IsMine) return;
 
-        // 1. Si estamos VIVOS, leemos el teclado para que el dato viaje por red
-        if (isPlayer && !isDowned)
-        {
-            isPressingE = Input.GetKey(KeyCode.E);
-        }
-
-        // 2. Si estamos CAÍDOS, evaluamos nuestro entorno
-        if (isPlayer && isDowned)
-        {
-            ManejarEstadoCaido();
-        }
+        if (isPlayer && !isDowned) isPressingE = Input.GetKey(KeyCode.E);
+        if (isPlayer && isDowned) ManejarEstadoCaido();
     }
 
     private void ManejarEstadoCaido()
@@ -62,12 +51,9 @@ public class HealthSystem : MonoBehaviourPun
             if (col.CompareTag("Player") && col.gameObject != this.gameObject)
             {
                 HealthSystem allyHealth = col.GetComponent<HealthSystem>();
-
                 if (allyHealth != null && !allyHealth.isDowned)
                 {
                     isSomeoneNear = true;
-
-                    // Acá verificamos la variable de red del compañero
                     if (allyHealth.isPressingE)
                     {
                         isSomeonePressingE = true;
@@ -78,11 +64,10 @@ public class HealthSystem : MonoBehaviourPun
         }
 
         string currentText = "";
-        int colorState = 0; // 0=Rojo, 1=RojoOscuro, 2=Amarillo, 3=Cyan
+        int colorState = 0;
 
         if (isSomeonePressingE)
         {
-            // MECÁNICA DE ESTABILIZACIÓN: Mientras mantienen la E
             bleedOutTimer = maxBleedOutTime;
             reviveTimer += Time.deltaTime;
 
@@ -94,11 +79,11 @@ public class HealthSystem : MonoBehaviourPun
 
             int reviveSegundos = Mathf.CeilToInt(timeRequiredToRevive - reviveTimer);
             currentText = $"¡ESTABILIZANDO!\nReviviendo en {reviveSegundos}s";
-            colorState = 3; // Cyan
+            colorState = 3;
         }
         else
         {
-            reviveTimer = 0f; // Reiniciamos si sueltan la E
+            reviveTimer = 0f;
             bleedOutTimer -= Time.deltaTime;
 
             if (bleedOutTimer <= 0)
@@ -109,22 +94,18 @@ public class HealthSystem : MonoBehaviourPun
             }
 
             int bleedSegundos = Mathf.CeilToInt(bleedOutTimer);
-
             if (isSomeoneNear)
             {
-                // Aparece la E cuando están cerca
                 currentText = $"[E] Para Revivir\nDesangrado: {bleedSegundos}s";
-                colorState = 2; // Amarillo
+                colorState = 2;
             }
             else
             {
-                // Lógica normal si nadie ayuda
                 currentText = bleedSegundos.ToString();
                 colorState = bleedSegundos <= 10 ? 1 : 0;
             }
         }
 
-        // AHORRO DE RED: Solo mandamos la orden si el texto visual cambió
         if (currentText != lastDisplayedText)
         {
             lastDisplayedText = currentText;
@@ -132,15 +113,11 @@ public class HealthSystem : MonoBehaviourPun
         }
     }
 
-    // --- MÉTODOS DEL TEXTO 3D ---
-
     [PunRPC]
     private void RPC_CrearTextoCuentaRegresiva()
     {
         countdownTextObj = new GameObject("TextoDesangrado");
         countdownTextObj.transform.SetParent(this.transform);
-
-        // Lo subimos un poquito en Y (a 3f) porque el texto ahora usa dos renglones (\n)
         countdownTextObj.transform.localPosition = new Vector3(0f, 3f, 0f);
 
         countdownTextMesh = countdownTextObj.AddComponent<TextMesh>();
@@ -162,8 +139,6 @@ public class HealthSystem : MonoBehaviourPun
             if (mostrar)
             {
                 countdownTextMesh.text = textoCambiado;
-
-                // Mapeamos los colores optimizados
                 switch (colorState)
                 {
                     case 0: countdownTextMesh.color = Color.red; break;
@@ -183,8 +158,6 @@ public class HealthSystem : MonoBehaviourPun
         }
     }
 
-    // --- LÓGICA DE DAÑO Y REVIVIR ---
-
     [PunRPC]
     public void RPC_TakeDamage(float damage, int shooterViewID)
     {
@@ -200,17 +173,11 @@ public class HealthSystem : MonoBehaviourPun
             }
             else
             {
-                // ¡EL ZOMBI MURIÓ!
-                // Buscamos quién fue el tirador
                 PhotonView shooter = PhotonView.Find(shooterViewID);
-
-                // Si el tirador existe, y es MI jugador en MI computadora, me sumo un punto
                 if (shooter != null && shooter.IsMine)
                 {
                     API_LaOrden.misKillsLocales++;
-                    Debug.Log("¡Zombi eliminado! Kills actuales: " + API_LaOrden.misKillsLocales);
                 }
-
                 Die();
             }
         }
@@ -225,7 +192,6 @@ public class HealthSystem : MonoBehaviourPun
         lastDisplayedText = "";
 
         transform.eulerAngles = new Vector3(90f, transform.eulerAngles.y, transform.eulerAngles.z);
-
         gameObject.tag = "Untagged";
 
         Rigidbody rb = GetComponent<Rigidbody>();
@@ -251,14 +217,10 @@ public class HealthSystem : MonoBehaviourPun
         if (countdownTextObj != null) countdownTextObj.SetActive(false);
 
         transform.eulerAngles = new Vector3(0f, transform.eulerAngles.y, transform.eulerAngles.z);
-
         gameObject.tag = "Player";
 
         Rigidbody rb = GetComponent<Rigidbody>();
-        if (rb != null)
-        {
-            rb.isKinematic = false;
-        }
+        if (rb != null) rb.isKinematic = false;
 
         if (photonView.IsMine)
         {
@@ -274,24 +236,29 @@ public class HealthSystem : MonoBehaviourPun
             if (!isPlayer)
             {
                 WaveManager waveManager = FindObjectOfType<WaveManager>();
-                if (waveManager != null)
-                {
-                    waveManager.ZombieDied();
-                }
+                if (waveManager != null) waveManager.ZombieDied();
             }
             else
             {
-                // Lógica si el que muere definitivamente es un jugador
-                if (Camera.main != null)
+                // 1. SOLTAMOS NUESTRA PROPIA CHAPA
+                SoltarChapaAlPiso(PhotonNetwork.LocalPlayer.ActorNumber);
+
+                // 2. SOLTAMOS TODAS LAS CHAPAS QUE LLEVÁBAMOS
+                foreach (int actorCaido in chapasRecogidas)
                 {
-                    Camera.main.gameObject.AddComponent<GhostCamera>();
+                    SoltarChapaAlPiso(actorCaido);
                 }
+
+                // Vaciamos la mochila (ya están todas en el piso)
+                photonView.RPC("RPC_LimpiarChapas", RpcTarget.All);
+
+                if (Camera.main != null) Camera.main.gameObject.AddComponent<GhostCamera>();
 
                 API_LaOrden api = FindObjectOfType<API_LaOrden>();
                 if (api != null)
                 {
-                    // Mandamos nuestro nombre, nuestras kills, y el tiempo que duramos vivos
-                    api.EnviarReporteMuerte(PhotonNetwork.NickName, API_LaOrden.misKillsLocales, Time.timeSinceLevelLoad);
+                    string miNombre = string.IsNullOrEmpty(PhotonNetwork.NickName) ? "Agente " + PhotonNetwork.LocalPlayer.ActorNumber : PhotonNetwork.NickName;
+                    api.EnviarReporteMuerte(miNombre, API_LaOrden.misKillsLocales, Time.timeSinceLevelLoad);
                 }
             }
 
@@ -299,9 +266,37 @@ public class HealthSystem : MonoBehaviourPun
         }
     }
 
-    private void OnDrawGizmosSelected()
+    private void SoltarChapaAlPiso(int actorNum)
     {
-        Gizmos.color = Color.green;
-        Gizmos.DrawWireSphere(transform.position, reviveRadius);
+        // Le damos un pequeño empujoncito aleatorio para que si caen 3 juntas, no queden en el mismo pixel
+        Vector3 offset = new Vector3(Random.Range(-0.8f, 0.8f), 1f, Random.Range(-0.8f, 0.8f));
+        GameObject chapa = PhotonNetwork.Instantiate("ChapaPrefab", transform.position + offset, Quaternion.identity);
+        chapa.GetComponent<PhotonView>().RPC("RPC_ConfigurarChapa", RpcTarget.AllBuffered, actorNum);
+    }
+
+    // --- MANEJO DE MOCHILA DE CHAPAS ---
+    [PunRPC]
+    public void RPC_RecogerChapa(int actorNumber)
+    {
+        // Agregamos al final de la lista para respetar el orden de recogida
+        if (photonView.IsMine && !chapasRecogidas.Contains(actorNumber))
+        {
+            chapasRecogidas.Add(actorNumber);
+        }
+    }
+
+    [PunRPC]
+    public void RPC_RemoverPrimeraChapa()
+    {
+        if (photonView.IsMine && chapasRecogidas.Count > 0)
+        {
+            chapasRecogidas.RemoveAt(0);
+        }
+    }
+
+    [PunRPC]
+    public void RPC_LimpiarChapas()
+    {
+        if (photonView.IsMine) chapasRecogidas.Clear();
     }
 }
