@@ -18,11 +18,11 @@ public class ZombieAI : MonoBehaviourPun
     void Start()
     {
         agent = GetComponent<NavMeshAgent>();
-        
-        // Solo el Master Client calcula la inteligencia artificial
-        if (!PhotonNetwork.IsMasterClient)
+
+        // Solo el Master Client prende el agente y calcula la IA
+        if (PhotonNetwork.IsMasterClient)
         {
-            agent.enabled = false;
+            agent.enabled = true;
         }
     }
 
