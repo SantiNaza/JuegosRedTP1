@@ -68,8 +68,8 @@ public class TopDownWeaponController : MonoBehaviourPun
 
     void Update()
     {
-        // Esto protege perfectamente que nadie controle a un jugador ajeno
-        if (!photonView.IsMine || isReloading) return;
+        // NUEVO: Agregamos "|| LocalPauseMenu.isPaused" para que el arma se bloquee si el menú está abierto
+        if (!photonView.IsMine || isReloading || LocalPauseMenu.isPaused) return;
 
         // Si estamos dando la patada, bloqueamos la mira para permitir la inclinación al cielo
         if (!isMeleeAttacking)
@@ -243,7 +243,7 @@ public class TopDownWeaponController : MonoBehaviourPun
         Bullet bulletScript = bulletObj.GetComponent<Bullet>();
         if (bulletScript != null)
         {
-            // NUEVO: Le pasamos también el ViewID de tu jugador
+            // Le pasamos también el ViewID de tu jugador
             bulletScript.SetDamage(gunDamage, photonView.ViewID);
         }
     }
@@ -268,7 +268,7 @@ public class TopDownWeaponController : MonoBehaviourPun
                 HealthSystem targetHealth = col.GetComponent<HealthSystem>();
                 if (targetHealth != null)
                 {
-                    // NUEVO: Sumamos el photonView.ViewID al final
+                    // Sumamos el photonView.ViewID al final
                     targetView.RPC("RPC_TakeDamage", RpcTarget.All, kickDamage, photonView.ViewID);
                 }
                 targetView.RPC("RPC_ApplyKnockback", RpcTarget.MasterClient, direccionEmpuje * kickForce);
@@ -288,6 +288,7 @@ public class TopDownWeaponController : MonoBehaviourPun
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position + (transform.forward * 1f), meleeRange);
     }
+
     [PunRPC]
     public void RPC_AnimacionMelee()
     {

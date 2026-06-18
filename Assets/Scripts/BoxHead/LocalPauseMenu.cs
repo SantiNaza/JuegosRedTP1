@@ -5,14 +5,16 @@ using Photon.Pun;
 public class LocalPauseMenu : MonoBehaviourPunCallbacks
 {
     [Header("Referencias UI")]
-    public GameObject pausePanel; // El panel gris que oscurece la pantalla
-    public string mainMenuSceneName = "RoomMenu"; // El nombre de tu escena de menú
+    public GameObject pausePanel;
+    public string mainMenuSceneName = "RoomMenu";
 
-    private bool isMenuOpen = false;
+    // CLAVE: Variable global estática para bloquear los controles
+    public static bool isPaused = false;
 
     void Start()
     {
-        // Nos aseguramos de que el menú empiece apagado
+        isPaused = false; // Nos aseguramos de que arranque desactivada
+
         if (pausePanel != null)
         {
             pausePanel.SetActive(false);
@@ -21,7 +23,6 @@ public class LocalPauseMenu : MonoBehaviourPunCallbacks
 
     void Update()
     {
-        // Al apretar ESC, abrimos o cerramos el menú
         if (Input.GetKeyDown(KeyCode.Escape))
         {
             ToggleMenu();
@@ -30,40 +31,33 @@ public class LocalPauseMenu : MonoBehaviourPunCallbacks
 
     public void ToggleMenu()
     {
-        isMenuOpen = !isMenuOpen;
+        // Invertimos el estado de la variable global
+        isPaused = !isPaused;
 
         if (pausePanel != null)
         {
-            pausePanel.SetActive(isMenuOpen);
+            pausePanel.SetActive(isPaused);
         }
-
-        // CLAVE: NO usamos Time.timeScale = 0f. 
-        // Al no tocar el tiempo, el juego sigue corriendo, los zombies atacan
-        // y tus compañeros te ven quieto. ¡Falsa pausa lograda!
     }
 
     public void LeaveMatchLocal()
     {
-        // Apagamos el panel para que no cliqueen dos veces
+        isPaused = false; // Limpiamos la variable por las dudas antes de salir
+
         if (pausePanel != null) pausePanel.SetActive(false);
 
-        // Le pedimos a Photon que nos saque de la sala actual
         if (PhotonNetwork.InRoom)
         {
             PhotonNetwork.LeaveRoom();
         }
         else
         {
-            // Por si acaso no estábamos en sala, cargamos directo
             SceneManager.LoadScene(mainMenuSceneName);
         }
     }
 
-    // Este método es de Photon: se dispara automáticamente en tu máquina
-    // justo en el instante en que terminás de salir de la sala.
     public override void OnLeftRoom()
     {
-        // Una vez desconectados, cargamos la escena del menú
         SceneManager.LoadScene(mainMenuSceneName);
     }
 }

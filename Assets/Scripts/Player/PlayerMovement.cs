@@ -51,7 +51,12 @@ public class PlayerMovement : MonoBehaviourPun
 
     private void Update()
     {
-        if (!photonView.IsMine || isKnockedBack) return;
+        // NUEVO: Bloqueamos los inputs si el menú de pausa local está abierto
+        if (!photonView.IsMine || isKnockedBack || LocalPauseMenu.isPaused)
+        {
+            moveInput = Vector3.zero; // Frenamos al personaje para que no siga resbalando
+            return;
+        }
 
         float horizontal = Input.GetAxisRaw("Horizontal");
         float vertical = Input.GetAxisRaw("Vertical");
@@ -105,7 +110,8 @@ public class PlayerMovement : MonoBehaviourPun
 
     private void FixedUpdate()
     {
-        if (!photonView.IsMine || isKnockedBack) return;
+        // NUEVO: Bloqueamos las físicas de movimiento voluntario si está pausado
+        if (!photonView.IsMine || isKnockedBack || LocalPauseMenu.isPaused) return;
 
         Move();
     }
