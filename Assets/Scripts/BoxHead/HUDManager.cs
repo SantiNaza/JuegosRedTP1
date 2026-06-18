@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using Photon.Pun;
+using System.Collections; 
 
 public class HUDManager : MonoBehaviour
 {
@@ -16,16 +17,19 @@ public class HUDManager : MonoBehaviour
         public TextMeshProUGUI textoCargadores;
     }
 
-    [Header("Configur· los 5 slots de la UI aquÌ")]
+    [Header("Configur√° los 5 slots de la UI aqu√≠")]
     public PlayerUISlot[] slotsJugadores = new PlayerUISlot[5];
 
-    [Header("UI Central (ExtracciÛn)")]
+    [Header("UI Central (Extracci√≥n)")]
     public TextMeshProUGUI textoExtraccion;
 
-    // NUEVO: Variables para la MigraciÛn de Host
-    [Header("UI MigraciÛn (Host)")]
+    [Header("UI Migraci√≥n (Host)")]
     public GameObject panelFondoMigracion;
     public TextMeshProUGUI textoMigracion;
+
+    // NUEVO: UI para notificaciones r√°pidas (como desconexiones)
+    [Header("UI Notificaciones")]
+    public TextMeshProUGUI textoNotificaciones;
 
     void Awake()
     {
@@ -42,9 +46,10 @@ public class HUDManager : MonoBehaviour
     void Start()
     {
         if (textoExtraccion != null) textoExtraccion.gameObject.SetActive(false);
-
-        // Arrancamos con la pantalla de migraciÛn apagada
         if (panelFondoMigracion != null) panelFondoMigracion.SetActive(false);
+        
+        // Arrancamos con las notificaciones apagadas
+        if (textoNotificaciones != null) textoNotificaciones.gameObject.SetActive(false);
     }
 
     void Update()
@@ -67,7 +72,6 @@ public class HUDManager : MonoBehaviour
 
                 if (slot.textoNombre != null)
                 {
-                    //string prefijo = health.photonView.IsMine ? "[VOS] " : "";
                     slot.textoNombre.text = health.photonView.Owner.NickName;
 
                     if (health.photonView.Owner.CustomProperties.TryGetValue("color", out object indexColor))
@@ -123,9 +127,6 @@ public class HUDManager : MonoBehaviour
         }
     }
 
-    // ==========================================
-    // NUEVO: M…TODOS PARA LA MIGRACI”N
-    // ==========================================
     public void MostrarMigracion(string mensaje)
     {
         if (panelFondoMigracion != null) panelFondoMigracion.SetActive(true);
@@ -135,5 +136,29 @@ public class HUDManager : MonoBehaviour
     public void OcultarMigracion()
     {
         if (panelFondoMigracion != null) panelFondoMigracion.SetActive(false);
+    }
+
+    // ==========================================
+    // NUEVO: RUTINA DE NOTIFICACIONES R√ÅPIDAS
+    // ==========================================
+    public void MostrarNotificacionTemporal(string mensaje, float tiempo)
+    {
+        if (textoNotificaciones != null)
+        {
+            // Detenemos cualquier corrutina anterior por si se desconectan dos muy r√°pido
+            StopCoroutine("RutinaNotificacion"); 
+            StartCoroutine(RutinaNotificacion(mensaje, tiempo));
+        }
+    }
+
+    private IEnumerator RutinaNotificacion(string mensaje, float tiempo)
+    {
+        textoNotificaciones.gameObject.SetActive(true);
+        textoNotificaciones.text = mensaje;
+        
+        // Esperamos X segundos
+        yield return new WaitForSeconds(tiempo);
+        
+        textoNotificaciones.gameObject.SetActive(false);
     }
 }

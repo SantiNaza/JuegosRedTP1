@@ -6,20 +6,18 @@ using System.Collections;
 public class HostMigrationManager : MonoBehaviourPunCallbacks
 {
     // ==========================================
-    // 1. CAÕDA DEL HOST (MIGRACI”N)
+    // 1. CA√çDA DEL HOST (MIGRACI√ìN)
     // ==========================================
     public override void OnMasterClientSwitched(Player newMasterClient)
     {
-        Debug.Log("El Host original se cayÛ. Transfiriendo red a: " + newMasterClient.NickName);
+        Debug.Log("El Host original se cay√≥. Transfiriendo red a: " + newMasterClient.NickName);
         StartCoroutine(RutinaPausaMigracion(newMasterClient));
     }
 
     private IEnumerator RutinaPausaMigracion(Player nuevoHost)
     {
-        // 1. Congelamos el tiempo
         Time.timeScale = 0f;
 
-        // 2. Le pedimos al Singleton del HUD que prenda el cartel
         if (HUDManager.Instance != null)
         {
             string nombre = string.IsNullOrEmpty(nuevoHost.NickName) ? "Agente " + nuevoHost.ActorNumber : nuevoHost.NickName;
@@ -27,10 +25,8 @@ public class HostMigrationManager : MonoBehaviourPunCallbacks
             HUDManager.Instance.MostrarMigracion(mensaje);
         }
 
-        // 3. Esperamos 3 segundos reales
         yield return new WaitForSecondsRealtime(3f);
 
-        // 4. Descongelamos el tiempo y le pedimos al HUD que apague el cartel
         Time.timeScale = 1f;
         if (HUDManager.Instance != null)
         {
@@ -39,27 +35,47 @@ public class HostMigrationManager : MonoBehaviourPunCallbacks
 
         if (PhotonNetwork.IsMasterClient)
         {
-            Debug.Log("MigraciÛn exitosa. Ahora controlo la IA de La Orden.");
+            Debug.Log("Migraci√≥n exitosa. Ahora controlo la IA de La Orden.");
         }
     }
+
     // ==========================================
-    // 2. NUEVO: CAÕDA DE NUESTRA PROPIA CONEXI”N
+    // 2. CA√çDA DE NUESTRA PROPIA CONEXI√ìN
     // ==========================================
     public override void OnDisconnected(DisconnectCause cause)
     {
-        // Si nos desconectamos a propÛsito (ej: saliendo al men˙ principal con un botÛn), no hacemos nada
         if (cause == DisconnectCause.DisconnectByClientLogic) return;
 
-        Debug.LogWarning("DesconexiÛn crÌtica de Photon. Causa: " + cause);
+        Debug.LogWarning("Desconexi√≥n cr√≠tica de Photon. Causa: " + cause);
 
-        // Congelamos el mundo localmente para que los zombis no nos coman en la pantalla de error
         Time.timeScale = 0f;
 
         if (HUDManager.Instance != null)
         {
-            // Reutilizamos la pantalla negra pas·ndole un mensaje de error crÌtico
-            string mensajeError = "CONEXI”N PERDIDA.\nFALLO CRÕTICO EN EL ENLACE DE RED.\nMOTIVO: " + cause.ToString() + "\nPOR FAVOR, REINICIE EL SISTEMA.";
+            string mensajeError = "CONEXI√ìN PERDIDA.\nFALLO CR√çTICO EN EL ENLACE DE RED.\nMOTIVO: " + cause.ToString() + "\nPOR FAVOR, REINICIE EL SISTEMA.";
             HUDManager.Instance.MostrarMigracion(mensajeError);
+        }
+    }
+
+    // ==========================================
+    // 3. NUEVO: DESCONEXI√ìN DE OTRO JUGADOR
+    // ==========================================
+    public override void OnPlayerLeftRoom(Player otherPlayer)
+    {
+        // Si el que se fue era el Host, la migraci√≥n ya se encarga de avisar.
+        // Solo lanzamos la notificaci√≥n chiquita si era un jugador normal.
+        if (!otherPlayer.IsMasterClient)
+        {
+            string nombre = string.IsNullOrEmpty(otherPlayer.NickName) ? "Jugador " + otherPlayer.ActorNumber : otherPlayer.NickName;
+            string mensaje = nombre + " se desconect√≥.";
+            
+            Debug.Log(mensaje);
+
+            if (HUDManager.Instance != null)
+            {
+                // Le pedimos al HUD que muestre el texto por 3 segundos
+                HUDManager.Instance.MostrarNotificacionTemporal(mensaje, 3f);
+            }
         }
     }
 }
