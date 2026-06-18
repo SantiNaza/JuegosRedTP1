@@ -6251,8 +6251,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2f49e88fda459304d8535db181c33ac6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  healthPickupPrefab: {fileID: 2452154603137158803, guid: cec61baccd9a8894fae8d761558a764b, type: 3}
-  spawnHeightOffset: 0.5
+  healthPickupPrefab: {fileID: 621584630249350254, guid: 1f7993abb4d91f2439a1f32a2ad0ec70, type: 3}
+  spawnHeightOffset: 0.2
 --- !u!4 &118716049
 Transform:
   m_ObjectHideFlags: 0
@@ -92553,8 +92553,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0f94d621890fbc54ab745dd92135d5a3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ammoPickupPrefab: {fileID: 4830486286627065180, guid: 9c91c0b2c4d6d344280c94b30c6c0346, type: 3}
-  spawnHeightOffset: 0.5
+  ammoPickupPrefab: {fileID: 4997250639532511633, guid: bd9347e3f04bd774f8b6d08d8cb43b76, type: 3}
+  spawnHeightOffset: 0
 --- !u!4 &1885175498
 Transform:
   m_ObjectHideFlags: 0
