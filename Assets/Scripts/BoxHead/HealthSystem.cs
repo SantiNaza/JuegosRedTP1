@@ -268,8 +268,10 @@ public class HealthSystem : MonoBehaviourPun
 
     private void SoltarChapaAlPiso(int actorNum)
     {
-        // Le damos un pequeño empujoncito aleatorio para que si caen 3 juntas, no queden en el mismo pixel
-        Vector3 offset = new Vector3(Random.Range(-0.8f, 0.8f), 1f, Random.Range(-0.8f, 0.8f));
+        // El Y=0.1f hace que la chapa aparezca al ras del piso, evitando que flote.
+        // Los X y Z aleatorios siguen estando para que si caen 3 juntas, no se superpongan exactamente en el mismo pixel.
+        Vector3 offset = new Vector3(Random.Range(-0.8f, 0.8f), 0.1f, Random.Range(-0.8f, 0.8f));
+
         GameObject chapa = PhotonNetwork.Instantiate("ChapaPrefab", transform.position + offset, Quaternion.identity);
         chapa.GetComponent<PhotonView>().RPC("RPC_ConfigurarChapa", RpcTarget.AllBuffered, actorNum);
     }
