@@ -213,4 +213,9 @@ public class PlayerMovement : MonoBehaviourPun
             sinAireTextObj.SetActive(mostrar);
         }
     }
+
+    public void AplicarMejoraVelocidad(float velocidadExtra)
+    {
+        moveSpeed += velocidadExtra;
+    }
 }
