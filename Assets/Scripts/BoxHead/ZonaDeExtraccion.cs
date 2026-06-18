@@ -24,6 +24,7 @@ public class ZonaDeExtraccion : MonoBehaviourPun
     // 1. Detectar quién entra
     void OnTriggerEnter(Collider other)
     {
+        Debug.Log("Algo entró: " + other.name + " | tag: " + other.tag);
         if (other.CompareTag("Player"))
         {
             jugadoresAdentro.Add(other);
