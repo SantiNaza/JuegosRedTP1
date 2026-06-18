@@ -19,6 +19,9 @@ public class CharacterSelector : MonoBehaviourPunCallbacks
     [Header("Scenes")]
     [SerializeField] private string gameSceneName = "Gameplay";
 
+    [Header("Input Nickname")]
+    public TMP_InputField nameInputField; // Arrastrá tu InputField de la UI acá
+
     const string KEY_COLOR = "color";
     const string KEY_READY = "ready";
     const string PREF_COLOR = "preferred_color"; // NUEVO: clave de PlayerPrefs
@@ -41,6 +44,19 @@ public class CharacterSelector : MonoBehaviourPunCallbacks
 
         if (characterRenderer == null)
             characterRenderer = GetComponentInChildren<Renderer>();
+        // Cargamos el nombre guardado (si existe) y actualizamos la red
+        if (nameInputField != null)
+        {
+            string savedName = PlayerPrefs.GetString("nickname", "Agente Desconocido");
+            nameInputField.text = savedName;
+            PhotonNetwork.NickName = savedName;
+
+            // Cada vez que tipeás una letra, se guarda automáticamente
+            nameInputField.onValueChanged.AddListener((val) => {
+                PhotonNetwork.NickName = val;
+                PlayerPrefs.SetString("nickname", val);
+            });
+        }
     }
 
     bool IsTaken(int index)
@@ -105,6 +121,27 @@ public class CharacterSelector : MonoBehaviourPunCallbacks
     void Confirm()
     {
         if (currentIndex < 0 || confirmed) return;
+
+        // --- SISTEMA ANTI-DUPLICADOS ---
+        string miNombre = PhotonNetwork.NickName;
+        if (string.IsNullOrWhiteSpace(miNombre)) miNombre = "Agente";
+
+        foreach (Player p in PhotonNetwork.PlayerList)
+        {
+            // Si el jugador no soy yo, y tiene mi mismo nombre...
+            if (!p.IsLocal && p.NickName == miNombre)
+            {
+                // Le agregamos nuestro número de Actor para evitar el clon
+                miNombre = miNombre + "-" + PhotonNetwork.LocalPlayer.ActorNumber;
+                PhotonNetwork.NickName = miNombre;
+                PlayerPrefs.SetString("nickname", miNombre); // Actualizamos el guardado
+
+                if (nameInputField != null) nameInputField.text = miNombre; // Actualizamos la UI
+                break;
+            }
+        }
+        // -------------------------------
+
         confirmed = true;
         leftButton.interactable = false;
         rightButton.interactable = false;

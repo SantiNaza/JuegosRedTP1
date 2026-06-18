@@ -12,12 +12,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 469c24fdb3bd6431b92cc1465bd9166b, type: 3}
   m_Name: RemoteConfigDataStoreAsset
   m_EditorClassIdentifier: 
-  _rsKeyList: "[\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"23a9598d-a563-436a-b258-e1e7c4506e4c\"\r\n   
+  _rsKeyList: "[\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"b0a8ebba-5928-43c3-905b-500478261e6e\"\r\n   
     },\r\n    \"rs\": {\r\n      \"key\": \"SpawnRate\",\r\n      \"type\": \"float\",\r\n     
-    \"value\": 0.01\r\n    }\r\n  }\r\n]"
-  _rsLastCachedKeyList: "[\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"23a9598d-a563-436a-b258-e1e7c4506e4c\"\r\n   
+    \"value\": 1.0\r\n    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\":
+    \"31314505-f92a-49eb-9300-3d7c9f306dbc\"\r\n    },\r\n    \"rs\": {\r\n     
+    \"key\": \"fuegoAmigoActivado\",\r\n      \"type\": \"bool\",\r\n      \"value\":
+    false\r\n    }\r\n  }\r\n]"
+  _rsLastCachedKeyList: "[\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"b0a8ebba-5928-43c3-905b-500478261e6e\"\r\n   
     },\r\n    \"rs\": {\r\n      \"key\": \"SpawnRate\",\r\n      \"type\": \"float\",\r\n     
-    \"value\": 0.01\r\n    }\r\n  }\r\n]"
+    \"value\": 1.0\r\n    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\":
+    \"31314505-f92a-49eb-9300-3d7c9f306dbc\"\r\n    },\r\n    \"rs\": {\r\n     
+    \"key\": \"fuegoAmigoActivado\",\r\n      \"type\": \"bool\",\r\n      \"value\":
+    false\r\n    }\r\n  }\r\n]"
   _environments: "[\r\n  {\r\n    \"projectId\": \"cec5e0a2-a3ac-4c0e-b082-4a4fd0d9e112\",\r\n   
     \"name\": \"production\",\r\n    \"id\": \"bb46e423-6612-49cb-8b7b-5c6dad04489f\",\r\n   
     \"isDefault\": true,\r\n    \"createdAt\": \"2026-06-17T22:26:57Z\",\r\n    \"updatedAt\":

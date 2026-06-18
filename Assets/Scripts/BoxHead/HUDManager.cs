@@ -5,7 +5,6 @@ using Photon.Pun;
 
 public class HUDManager : MonoBehaviour
 {
-    // EL SINGLETON: Permite que cualquier otro script encuentre al HUDManager al instante
     public static HUDManager Instance;
 
     [System.Serializable]
@@ -21,11 +20,15 @@ public class HUDManager : MonoBehaviour
     public PlayerUISlot[] slotsJugadores = new PlayerUISlot[5];
 
     [Header("UI Central (Extracción)")]
-    public TextMeshProUGUI textoExtraccion; // Acá vas a arrastrar tu texto gigante
+    public TextMeshProUGUI textoExtraccion;
+
+    // NUEVO: Variables para la Migración de Host
+    [Header("UI Migración (Host)")]
+    public GameObject panelFondoMigracion;
+    public TextMeshProUGUI textoMigracion;
 
     void Awake()
     {
-        // Configuramos el Singleton
         if (Instance == null)
         {
             Instance = this;
@@ -38,8 +41,10 @@ public class HUDManager : MonoBehaviour
 
     void Start()
     {
-        // Nos aseguramos de que el texto arranque apagado
         if (textoExtraccion != null) textoExtraccion.gameObject.SetActive(false);
+
+        // Arrancamos con la pantalla de migración apagada
+        if (panelFondoMigracion != null) panelFondoMigracion.SetActive(false);
     }
 
     void Update()
@@ -62,8 +67,17 @@ public class HUDManager : MonoBehaviour
 
                 if (slot.textoNombre != null)
                 {
-                    string prefijo = health.photonView.IsMine ? "[TÚ] " : "";
+                    string prefijo = health.photonView.IsMine ? "[VOS] " : "";
                     slot.textoNombre.text = prefijo + health.photonView.Owner.NickName;
+
+                    if (health.photonView.Owner.CustomProperties.TryGetValue("color", out object indexColor))
+                    {
+                        int cIndex = (int)indexColor;
+                        if (cIndex >= 0 && cIndex < GameColors.Palette.Length)
+                        {
+                            slot.textoNombre.color = GameColors.Palette[cIndex];
+                        }
+                    }
                 }
 
                 if (slot.barraVida != null)
@@ -91,15 +105,11 @@ public class HUDManager : MonoBehaviour
         }
     }
 
-    // ==========================================
-    // MÉTODOS PARA LA ZONA DE EXTRACCIÓN
-    // ==========================================
     public void MostrarTextoExtraccion(string mensaje, Color colorMensaje)
     {
         if (textoExtraccion != null)
         {
             if (!textoExtraccion.gameObject.activeSelf) textoExtraccion.gameObject.SetActive(true);
-
             textoExtraccion.text = mensaje;
             textoExtraccion.color = colorMensaje;
         }
@@ -111,5 +121,19 @@ public class HUDManager : MonoBehaviour
         {
             textoExtraccion.gameObject.SetActive(false);
         }
+    }
+
+    // ==========================================
+    // NUEVO: MÉTODOS PARA LA MIGRACIÓN
+    // ==========================================
+    public void MostrarMigracion(string mensaje)
+    {
+        if (panelFondoMigracion != null) panelFondoMigracion.SetActive(true);
+        if (textoMigracion != null) textoMigracion.text = mensaje;
+    }
+
+    public void OcultarMigracion()
+    {
+        if (panelFondoMigracion != null) panelFondoMigracion.SetActive(false);
     }
 }

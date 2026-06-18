@@ -230,12 +230,14 @@ MonoBehaviour:
   maxHealth: 100
   currentHealth: 0
   destroyOnDeath: 1
+  meshRenderer: {fileID: 3873604477598811216}
   isPlayer: 0
   isDowned: 0
   isPressingE: 0
   maxBleedOutTime: 15
   timeRequiredToRevive: 5
   reviveRadius: 2
+  velocidadRevivirDeRed: 5
   chapasRecogidas: 
 --- !u!114 &6282712462052087687
 MonoBehaviour:

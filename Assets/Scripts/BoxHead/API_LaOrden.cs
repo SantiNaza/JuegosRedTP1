@@ -3,26 +3,37 @@ using UnityEngine.Networking;
 using System.Collections;
 using Newtonsoft.Json;
 
-// El "molde" de nuestro paquete de datos
 [System.Serializable]
 public class ReporteMuerte
 {
     public string agente;
     public int kills;
-    public float tiempo; // Agregamos el tiempo de partida
+    public float tiempo;
 }
 
 public class API_LaOrden : MonoBehaviour
 {
-    // Tu URL ya está pegada acá
     private string webAppUrl = "https://script.google.com/macros/s/AKfycbzVu0Kxx6gFolsUGAUzp5slYJzxEw2xNJR0Va4F0Ztz_PhnHv6jiWwPwx9l1wLcW6uh/exec";
 
-    // Variable global para contar los zombis que matamos NOSOTROS
     public static int misKillsLocales = 0;
 
-    // Actualizamos el método para que pida el tiempo
+    // NUEVO: Candado de seguridad
+    public static bool yaEnviado = false;
+
+    void Awake()
+    {
+        // Al arrancar un nivel nuevo, reseteamos el candado y las kills
+        yaEnviado = false;
+        misKillsLocales = 0;
+    }
+
     public void EnviarReporteMuerte(string nombreAgente, int totalKills, float tiempoPartida)
     {
+        // Si ya mandamos datos en esta partida, abortamos para evitar duplicados
+        if (yaEnviado) return;
+
+        yaEnviado = true; // Cerramos el candado
+
         ReporteMuerte reporte = new ReporteMuerte();
         reporte.agente = nombreAgente;
         reporte.kills = totalKills;
@@ -46,6 +57,7 @@ public class API_LaOrden : MonoBehaviour
             if (www.result == UnityWebRequest.Result.ConnectionError || www.result == UnityWebRequest.Result.ProtocolError)
             {
                 Debug.LogError("Error de transmisión a la base: " + www.error);
+                yaEnviado = false; // Si hubo un error de internet, abrimos el candado para reintentar
             }
             else
             {

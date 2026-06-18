@@ -78,6 +78,7 @@ MonoBehaviour:
   - RPC_SyncPressingE
   - RPC_ApagarEstacion
   - RPC_ProcesarRescate
+  - RPC_AnimacionMelee
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 1

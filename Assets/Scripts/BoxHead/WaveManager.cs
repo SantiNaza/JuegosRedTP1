@@ -21,6 +21,8 @@ public class WaveManager : MonoBehaviourPun
 
     private float timeBetweenSpawns = 1f;
 
+    public static bool fuegoAmigoActivado = false;
+
     async void Start()
     {
         if (PhotonNetwork.InRoom)
@@ -56,8 +58,13 @@ public class WaveManager : MonoBehaviourPun
 
     private void AplicarConfiguracionRemota(ConfigResponse response)
     {
+        // Leemos la velocidad de los zombis que ya tenías
         timeBetweenSpawns = RemoteConfigService.Instance.appConfig.GetFloat("SpawnRate", 1.0f);
-        Debug.Log("Live-Ops: Tiempo entre spawns actualizado a: " + timeBetweenSpawns + " segundos");
+
+        // NUEVO: Leemos nuestra llave de fuego amigo desde la nube
+        fuegoAmigoActivado = RemoteConfigService.Instance.appConfig.GetBool("fuego_amigo_activado", false);
+
+        Debug.Log("Live-Ops | Spawns: " + timeBetweenSpawns + "s | Fuego Amigo: " + fuegoAmigoActivado);
     }
 
     private void ComprobarYArrancar()
@@ -119,7 +126,11 @@ public class WaveManager : MonoBehaviourPun
             if (NavMesh.SamplePosition(spawnPos, out NavMeshHit hit, 5f, NavMesh.AllAreas))
             {
                 spawnPos = hit.position;
-                PhotonNetwork.Instantiate(zombiePrefab.name, spawnPos, Quaternion.identity);
+                // CAMBIAR ESTO:
+                // PhotonNetwork.Instantiate(zombiePrefab.name, spawnPos, Quaternion.identity);
+
+                // POR ESTO:
+                PhotonNetwork.InstantiateRoomObject(zombiePrefab.name, spawnPos, Quaternion.identity);
                 zombiesAlive++;
             }
             else

@@ -33,12 +33,17 @@ public class Bullet : MonoBehaviourPun
     void OnTriggerEnter(Collider other)
     {
         if (!photonView.IsMine) return;
-        if (other.CompareTag("Player")) return;
+
+        // Si chocamos a un jugador y el Live-Ops dice que NO hay fuego amigo, la bala se rompe y no hace daño.
+        if (other.CompareTag("Player") && !WaveManager.fuegoAmigoActivado)
+        {
+            DestroyBullet();
+            return; // Cortamos la ejecución acá
+        }
 
         HealthSystem target = other.GetComponent<HealthSystem>();
         if (target != null)
         {
-            // NUEVO: La bala despacha el daño utilizando el ID del jugador original
             target.photonView.RPC("RPC_TakeDamage", RpcTarget.All, damage, ownerViewID);
         }
 

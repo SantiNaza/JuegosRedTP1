@@ -539,6 +539,7 @@ GameObject:
   - component: {fileID: 8686973222624548330}
   - component: {fileID: 4830784854221723103}
   - component: {fileID: 5944964712571724835}
+  - component: {fileID: 6497479804960754420}
   m_Layer: 6
   m_Name: Player
   m_TagString: Player
@@ -649,6 +650,7 @@ MonoBehaviour:
   ObservedComponents:
   - {fileID: 5180643711351041223}
   - {fileID: 8686973222624548330}
+  - {fileID: 6497479804960754420}
   sceneViewId: 0
   InstantiationId: 0
   isRuntimeInstantiated: 0
@@ -659,7 +661,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8367049372155576086}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8efc6b1d64977384eb3405357896c656, type: 3}
   m_Name: 
@@ -716,12 +718,14 @@ MonoBehaviour:
   maxHealth: 100
   currentHealth: 0
   destroyOnDeath: 1
+  meshRenderer: {fileID: 2404552435228694730}
   isPlayer: 1
   isDowned: 0
   isPressingE: 0
   maxBleedOutTime: 15
   timeRequiredToRevive: 3
   reviveRadius: 2
+  velocidadRevivirDeRed: 5
   chapasRecogidas: 
 --- !u!114 &2368473593385675097
 MonoBehaviour:
@@ -806,6 +810,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 28077f181faa2c047bca49231782f98f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &6497479804960754420
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8367049372155576086}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 63bc01d3cbf3c6746b0a325bfeffafb1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  lerpSpeed: 15
 --- !u!1 &8827059208307967625
 GameObject:
   m_ObjectHideFlags: 0

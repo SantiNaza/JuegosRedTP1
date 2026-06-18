@@ -35,6 +35,7 @@ public class TopDownWeaponController : MonoBehaviourPun
     [Header("Configuración de Patada")]
     public float kickDamage = 10f;
     public float kickForce = 8f;
+    private bool isMeleeAttacking = false;
 
     public Camera mainCamera;
 
@@ -70,7 +71,11 @@ public class TopDownWeaponController : MonoBehaviourPun
         // Esto protege perfectamente que nadie controle a un jugador ajeno
         if (!photonView.IsMine || isReloading) return;
 
-        ApuntarHaciaElMouse();
+        // Si estamos dando la patada, bloqueamos la mira para permitir la inclinación al cielo
+        if (!isMeleeAttacking)
+        {
+            ApuntarHaciaElMouse();
+        }
 
         if (Input.GetKeyDown(KeyCode.R) && currentAmmo < magCapacity && cargadoresActuales > 0)
         {
@@ -273,11 +278,55 @@ public class TopDownWeaponController : MonoBehaviourPun
                 targetView.RPC("RPC_ApplyKnockback", targetView.Owner, direccionEmpuje * kickForce);
             }
         }
+        // Lo agregás como la última línea de tu AtaqueMelee()
+        photonView.RPC("RPC_AnimacionMelee", RpcTarget.All);
+
     }
 
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position + (transform.forward * 1f), meleeRange);
+    }
+    [PunRPC]
+    public void RPC_AnimacionMelee()
+    {
+        StartCoroutine(RutinaPatadaRetroceso());
+    }
+
+    private System.Collections.IEnumerator RutinaPatadaRetroceso()
+    {
+        // Bloqueamos el mouse para que no pelee contra la animación
+        if (photonView.IsMine) isMeleeAttacking = true;
+
+        // Memorizamos adónde estábamos apuntando
+        Quaternion rotacionOriginal = transform.rotation;
+
+        // 0.25 segundos es el tiempo perfecto para un giro ninja rapidísimo
+        float duracion = 0.25f;
+        float t = 0f;
+
+        // TORNADO KICK: Vuelta entera de 360 grados
+        while (t < duracion)
+        {
+            t += Time.deltaTime;
+
+            // Calculamos el porcentaje de la animación (de 0 a 1)
+            float progreso = t / duracion;
+
+            // SmoothStep hace que el giro empiece rápido y frene con un poco de suavidad al final
+            float anguloY = Mathf.SmoothStep(0f, 360f, progreso);
+
+            // Aplicamos el giro EXCLUSIVAMENTE en el eje Y. Cero resbalones.
+            transform.rotation = rotacionOriginal * Quaternion.Euler(0f, anguloY, 0f);
+
+            yield return null;
+        }
+
+        // Nos aseguramos de que quede clavado exactamente en la dirección original
+        transform.rotation = rotacionOriginal;
+
+        // Le devolvemos el control de la mira al jugador
+        if (photonView.IsMine) isMeleeAttacking = false;
     }
 }

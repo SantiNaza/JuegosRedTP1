@@ -8,6 +8,12 @@ public class HealthSystem : MonoBehaviourPun
     public float currentHealth;
     public bool destroyOnDeath = true;
 
+    [Header("Efecto de Daño (Visual)")]
+    public Renderer meshRenderer;
+    private Color colorOriginal;
+    private Coroutine flashCoroutine;
+    private bool isFlashing = false; // NUEVO: Candado para no pisar colores
+
     [Header("Configuración de Jugador (Revivir)")]
     public bool isPlayer = false;
     public bool isDowned = false;
@@ -16,8 +22,9 @@ public class HealthSystem : MonoBehaviourPun
     public float maxBleedOutTime = 15f;
     private float bleedOutTimer;
     private float reviveTimer = 0f;
-    public float timeRequiredToRevive = 3f;
+    public float timeRequiredToRevive = 5f;
     public float reviveRadius = 2f;
+    public float velocidadRevivirDeRed = 5f;
 
     public List<int> chapasRecogidas = new List<int>();
 
@@ -28,6 +35,7 @@ public class HealthSystem : MonoBehaviourPun
     void Start()
     {
         currentHealth = maxHealth;
+        velocidadRevivirDeRed = timeRequiredToRevive;
         if (isPlayer) photonView.RPC("RPC_CrearTextoCuentaRegresiva", RpcTarget.AllBuffered);
     }
 
@@ -35,33 +43,33 @@ public class HealthSystem : MonoBehaviourPun
     {
         if (!photonView.IsMine) return;
 
-        // CORRECCIÓN 1: Sincronizamos la tecla E a través de la red
         if (isPlayer && !isDowned)
         {
             bool currentPress = Input.GetKey(KeyCode.E);
             if (currentPress != isPressingE)
             {
                 isPressingE = currentPress;
-                photonView.RPC("RPC_SyncPressingE", RpcTarget.Others, isPressingE);
+                // AHORA MANDAMOS NUESTRA VELOCIDAD DE REVIVIR POR EL WALKIE-TALKIE
+                photonView.RPC("RPC_SyncPressingE", RpcTarget.Others, isPressingE, timeRequiredToRevive);
             }
         }
 
         if (isPlayer && isDowned) ManejarEstadoCaido();
     }
 
+    // ACTUALIZAMOS EL RPC PARA RECIBIR LA VELOCIDAD
     [PunRPC]
-    public void RPC_SyncPressingE(bool isPressing)
+    public void RPC_SyncPressingE(bool isPressing, float velocidadSalvador)
     {
         isPressingE = isPressing;
+        velocidadRevivirDeRed = velocidadSalvador;
     }
 
     private void ManejarEstadoCaido()
     {
         bool isSomeoneNear = false;
         bool isSomeonePressingE = false;
-
-        // Asumimos un tiempo por defecto por si algo falla, pero lo vamos a sobrescribir
-        float tiempoParaSerRevivido = 3f;
+        float tiempoParaSerRevivido = 5f;
 
         Collider[] colliders = Physics.OverlapSphere(transform.position, reviveRadius);
         foreach (Collider col in colliders)
@@ -75,10 +83,8 @@ public class HealthSystem : MonoBehaviourPun
                     if (allyHealth.isPressingE)
                     {
                         isSomeonePressingE = true;
-
-                        // ¡LA MAGIA DEL PARAMÉDICO!
-                        // Leemos la estadística del aliado que nos está salvando, no la nuestra.
-                        tiempoParaSerRevivido = allyHealth.timeRequiredToRevive;
+                        // LEEMOS LA VELOCIDAD DEL PARAMÉDICO POR RED
+                        tiempoParaSerRevivido = allyHealth.velocidadRevivirDeRed;
                         break;
                     }
                 }
@@ -90,17 +96,15 @@ public class HealthSystem : MonoBehaviourPun
 
         if (isSomeonePressingE)
         {
-            bleedOutTimer = maxBleedOutTime; // Congelamos tu desangrado
+            bleedOutTimer = maxBleedOutTime;
             reviveTimer += Time.deltaTime;
 
-            // Usamos la velocidad del paramédico para saber si ya nos levantó
             if (reviveTimer >= tiempoParaSerRevivido)
             {
                 photonView.RPC("RPC_Revive", RpcTarget.All);
                 return;
             }
 
-            // Calculamos los segundos restantes basándonos en el paramédico
             int reviveSegundos = Mathf.CeilToInt(tiempoParaSerRevivido - reviveTimer);
             currentText = $"¡ESTABILIZANDO!\nReviviendo en {reviveSegundos}s";
             colorState = 3;
@@ -188,6 +192,14 @@ public class HealthSystem : MonoBehaviourPun
         if (isDowned) return;
 
         currentHealth -= damage;
+
+        // --- DISPARAMOS EL PARPADEO VISUAL ---
+        if (meshRenderer != null)
+        {
+            if (flashCoroutine != null) StopCoroutine(flashCoroutine);
+            flashCoroutine = StartCoroutine(RutinaParpadeoDano());
+        }
+        // -------------------------------------
 
         if (currentHealth <= 0)
         {
@@ -339,5 +351,28 @@ public class HealthSystem : MonoBehaviourPun
         timeRequiredToRevive -= reviveMejora;
         if (timeRequiredToRevive < 0.5f) timeRequiredToRevive = 0.5f;
         maxBleedOutTime += desangradoExtra;
+    }
+
+    private System.Collections.IEnumerator RutinaParpadeoDano()
+    {
+        // 1. Solo memorizamos el color si NO estamos parpadeando ya.
+        // Esto evita que si nos pegan 2 zombis a la vez, guardemos el color "Rojo" como original.
+        if (!isFlashing)
+        {
+            colorOriginal = meshRenderer.material.color;
+        }
+
+        isFlashing = true; // Cerramos el candado
+
+        // 2. Nos pintamos de rojo intenso
+        meshRenderer.material.color = Color.red;
+
+        // 3. Esperamos la fracción de segundo
+        yield return new WaitForSeconds(0.1f);
+
+        // 4. Volvemos al color exacto (ya sea el verde del zombi, o tu color de red)
+        meshRenderer.material.color = colorOriginal;
+
+        isFlashing = false; // Abrimos el candado para el próximo golpe
     }
 }

@@ -1,12 +1,12 @@
 using UnityEngine;
 using Photon.Pun;
 using Photon.Realtime;
+using System.Collections;
 
 public class EstacionResurreccion : MonoBehaviourPun
 {
     [Header("Configuración")]
     public string nombrePrefabJugador = "Player";
-
     private bool yaUsada = false;
 
     void OnTriggerStay(Collider other)
@@ -21,9 +21,20 @@ public class EstacionResurreccion : MonoBehaviourPun
             {
                 if (hs.chapasRecogidas.Count > 0)
                 {
+                    int actorARevivir = hs.chapasRecogidas[0];
+
+                    // NUEVO: Buscamos el nombre del agente muerto
+                    string nombreCaido = "Agente " + actorARevivir;
+                    Player agenteMuerto = PhotonNetwork.CurrentRoom.GetPlayer(actorARevivir);
+                    if (agenteMuerto != null && !string.IsNullOrEmpty(agenteMuerto.NickName))
+                    {
+                        nombreCaido = agenteMuerto.NickName;
+                    }
+
                     if (HUDManager.Instance != null)
                     {
-                        HUDManager.Instance.MostrarTextoExtraccion("Pulsa [E] para pedir rescate", Color.cyan);
+                        // MOSTRAMOS EL NOMBRE EN LA UI CENTRAL
+                        HUDManager.Instance.MostrarTextoExtraccion("Pulsa [E] para revivir a " + nombreCaido, Color.cyan);
                     }
 
                     if (Input.GetKey(KeyCode.E))
@@ -31,12 +42,7 @@ public class EstacionResurreccion : MonoBehaviourPun
                         yaUsada = true;
                         if (HUDManager.Instance != null) HUDManager.Instance.OcultarTextoExtraccion();
 
-                        int actorARevivir = hs.chapasRecogidas[0];
-
-                        // 1. Apagamos la estación AL INSTANTE para que nadie más la toque
                         photonView.RPC("RPC_ApagarEstacion", RpcTarget.AllBuffered);
-
-                        // 2. Le pedimos al Master que ejecute la revivición
                         photonView.RPC("RPC_ProcesarRescate", RpcTarget.MasterClient, hs.photonView.ViewID, actorARevivir);
                     }
                 }
@@ -56,12 +62,8 @@ public class EstacionResurreccion : MonoBehaviourPun
     public void RPC_ApagarEstacion()
     {
         yaUsada = true;
-
-        // Apagamos las físicas para que no se pueda chocar
         Collider col = GetComponent<Collider>();
         if (col != null) col.enabled = false;
-
-        // Apagamos los gráficos para que desaparezca visualmente
         MeshRenderer mesh = GetComponent<MeshRenderer>();
         if (mesh != null) mesh.enabled = false;
     }
@@ -71,16 +73,13 @@ public class EstacionResurreccion : MonoBehaviourPun
     {
         if (!PhotonNetwork.IsMasterClient) return;
 
-        // Buscamos al jugador fantasma
         Player agenteCaido = PhotonNetwork.CurrentRoom.GetPlayer(actorARevivir);
 
         if (agenteCaido != null)
         {
-            // Le mandamos la orden DIRECTO a la computadora del fantasma
             photonView.RPC("RPC_RespawnAgente", agenteCaido, transform.position, nombrePrefabJugador);
         }
 
-        // Le quitamos la chapa al salvador
         PhotonView salvador = PhotonView.Find(viewIdSalvador);
         if (salvador != null)
         {
@@ -91,11 +90,11 @@ public class EstacionResurreccion : MonoBehaviourPun
     [PunRPC]
     public void RPC_RespawnAgente(Vector3 posicionRescate, string prefabName)
     {
-        // ¡ESTO LO EJECUTA LA COMPUTADORA DEL JUGADOR MUERTO!
         GhostCamera gc = FindObjectOfType<GhostCamera>();
-        if (gc != null) Destroy(gc.gameObject);
 
-        // Creamos nuestro nuevo cuerpo
+        // CORRECCIÓN MAGISTRAL: Borramos el componente, NO el GameObject entero.
+        if (gc != null) Destroy(gc);
+
         PhotonNetwork.Instantiate(prefabName, posicionRescate + (Vector3.up * 1f), Quaternion.identity);
     }
 }
