@@ -2,7 +2,8 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using Photon.Pun;
-using System.Collections; 
+using System.Collections;
+using UnityEngine.SceneManagement; // NUEVO: Para poder cargar el menú
 
 public class HUDManager : MonoBehaviour
 {
@@ -27,9 +28,14 @@ public class HUDManager : MonoBehaviour
     public GameObject panelFondoMigracion;
     public TextMeshProUGUI textoMigracion;
 
-    // NUEVO: UI para notificaciones rápidas (como desconexiones)
     [Header("UI Notificaciones")]
     public TextMeshProUGUI textoNotificaciones;
+
+    // ==========================================
+    // NUEVO: UI DERROTA
+    // ==========================================
+    [Header("UI Derrota")]
+    public GameObject panelDerrota;
 
     void Awake()
     {
@@ -47,9 +53,10 @@ public class HUDManager : MonoBehaviour
     {
         if (textoExtraccion != null) textoExtraccion.gameObject.SetActive(false);
         if (panelFondoMigracion != null) panelFondoMigracion.SetActive(false);
-        
-        // Arrancamos con las notificaciones apagadas
         if (textoNotificaciones != null) textoNotificaciones.gameObject.SetActive(false);
+        
+        // Apagamos el panel de derrota al empezar
+        if (panelDerrota != null) panelDerrota.SetActive(false);
     }
 
     void Update()
@@ -138,14 +145,10 @@ public class HUDManager : MonoBehaviour
         if (panelFondoMigracion != null) panelFondoMigracion.SetActive(false);
     }
 
-    // ==========================================
-    // NUEVO: RUTINA DE NOTIFICACIONES RÁPIDAS
-    // ==========================================
     public void MostrarNotificacionTemporal(string mensaje, float tiempo)
     {
         if (textoNotificaciones != null)
         {
-            // Detenemos cualquier corrutina anterior por si se desconectan dos muy rápido
             StopCoroutine("RutinaNotificacion"); 
             StartCoroutine(RutinaNotificacion(mensaje, tiempo));
         }
@@ -155,10 +158,41 @@ public class HUDManager : MonoBehaviour
     {
         textoNotificaciones.gameObject.SetActive(true);
         textoNotificaciones.text = mensaje;
-        
-        // Esperamos X segundos
         yield return new WaitForSeconds(tiempo);
-        
         textoNotificaciones.gameObject.SetActive(false);
+    }
+
+    // ==========================================
+    // NUEVO: SISTEMA DE DERROTA
+    // ==========================================
+    public void MostrarDerrota()
+    {
+        if (panelDerrota != null) panelDerrota.SetActive(true);
+
+        // Liberamos el cursor para que los jugadores puedan clickear el botón de salida
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+    }
+
+    // Esta función la vas a conectar a un Botón en la pantalla de derrota
+    public void VolverAlMenuPrincipal()
+    {
+        StartCoroutine(RutinaSalir());
+    }
+
+    private IEnumerator RutinaSalir()
+    {
+        // Restauramos el tiempo por si estaba pausado (ej: en medio de una migración)
+        Time.timeScale = 1f; 
+
+        if (PhotonNetwork.InRoom)
+        {
+            PhotonNetwork.LeaveRoom();
+            // Esperamos a que Photon nos desconecte de la sala antes de cargar la escena
+            while (PhotonNetwork.InRoom) yield return null; 
+        }
+
+        // Carga la escena del menú principal (asegurate de que se llame "Menu")
+        SceneManager.LoadScene("Menu"); 
     }
 }

@@ -23,6 +23,10 @@ public class WaveManager : MonoBehaviourPun
 
     public static bool fuegoAmigoActivado = false;
 
+    // NUEVO: Variables para detectar la derrota
+    private bool partidaIniciada = false;
+    private bool juegoTerminado = false;
+
     async void Start()
     {
         if (PhotonNetwork.InRoom)
@@ -43,6 +47,35 @@ public class WaveManager : MonoBehaviourPun
             }
 
             RemoteConfigService.Instance.FetchCompleted += AplicarConfiguracionRemota;
+        }
+    }
+
+    // NUEVO: Método Update para vigilar la vida del equipo
+    void Update()
+    {
+        // Solo el Host vigila el estado de la partida
+        if (!PhotonNetwork.IsMasterClient || juegoTerminado) return;
+
+        // Buscamos cuántos objetos tienen el Tag "Player" (los caídos pierden este Tag)
+        GameObject[] jugadoresVivos = GameObject.FindGameObjectsWithTag("Player");
+
+        // Fase 1: Esperar a que alguien spawnee para no tirar derrota prematura
+        if (!partidaIniciada)
+        {
+            if (jugadoresVivos.Length > 0)
+            {
+                partidaIniciada = true;
+            }
+        }
+        // Fase 2: El juego ya empezó, vigilamos si el contador llega a cero
+        else 
+        {
+            if (jugadoresVivos.Length == 0)
+            {
+                juegoTerminado = true;
+                // Avisamos a todos los clientes que muestren su pantalla
+                photonView.RPC("RPC_MostrarDerrota", RpcTarget.All);
+            }
         }
     }
 
@@ -126,10 +159,8 @@ public class WaveManager : MonoBehaviourPun
             if (NavMesh.SamplePosition(spawnPos, out NavMeshHit hit, 5f, NavMesh.AllAreas))
             {
                 spawnPos = hit.position;
-                // CAMBIAR ESTO:
-                // PhotonNetwork.Instantiate(zombiePrefab.name, spawnPos, Quaternion.identity);
-
-                // POR ESTO:
+                
+                // Instanciamos el objeto de sala para que persista con el Host Migration
                 PhotonNetwork.InstantiateRoomObject(zombiePrefab.name, spawnPos, Quaternion.identity);
                 zombiesAlive++;
             }
@@ -163,6 +194,16 @@ public class WaveManager : MonoBehaviourPun
         }
 
         StartCoroutine(StartWave());
+    }
+
+    // NUEVO: Método RPC para decirle al HUD que muestre la derrota
+    [PunRPC]
+    private void RPC_MostrarDerrota()
+    {
+        if (HUDManager.Instance != null)
+        {
+            HUDManager.Instance.MostrarDerrota();
+        }
     }
 
     public struct userAttributes { }

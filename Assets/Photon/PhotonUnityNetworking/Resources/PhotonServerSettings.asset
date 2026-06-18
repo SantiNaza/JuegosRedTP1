@@ -79,6 +79,7 @@ MonoBehaviour:
   - RPC_ApagarEstacion
   - RPC_ProcesarRescate
   - RPC_AnimacionMelee
+  - RPC_MostrarDerrota
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 1
