@@ -15,6 +15,7 @@ public class PressureDoor : MonoBehaviourPun
     private Vector3 closedPos;
     private Vector3 openPos;
     private bool isOpen = false;
+    private bool alreadyOpened = false; // una vez abierta, queda así para siempre
 
     void Awake()
     {
@@ -28,6 +29,9 @@ public class PressureDoor : MonoBehaviourPun
     {
         if (!PhotonNetwork.IsMasterClient) return;
 
+        // Si ya se abrió alguna vez, no volvemos a evaluar nunca más
+        if (alreadyOpened) return;
+
         bool allPressed = true;
         foreach (PressurePlate plate in plates)
         {
@@ -38,15 +42,19 @@ public class PressureDoor : MonoBehaviourPun
             }
         }
 
-        // Solo avisamos si el estado cambió
-        if (allPressed != isOpen)
-            photonView.RPC(nameof(RPC_SetDoorState), RpcTarget.AllBuffered, allPressed);
+        if (allPressed)
+        {
+            alreadyOpened = true;
+            // Buffered: el que entre tarde también la ve abierta
+            photonView.RPC(nameof(RPC_OpenForever), RpcTarget.AllBuffered);
+        }
     }
 
     [PunRPC]
-    private void RPC_SetDoorState(bool open)
+    private void RPC_OpenForever()
     {
-        isOpen = open;
+        isOpen = true;
+        alreadyOpened = true;
     }
 
     void Update()
