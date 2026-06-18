@@ -22,7 +22,7 @@ public class PlayerMovement : MonoBehaviourPun
     public LayerMask groundLayer;
 
     [Header("Configuración de Cámara")]
-    private Vector3 cameraOffset = new Vector3(0f, 12f, -6f);
+    private Vector3 cameraOffset = new Vector3(0f, 6f, -3f);
     private Vector3 anguloCamara = new Vector3(60f, 0f, 0f);
 
     private Rigidbody rb;
