@@ -5,6 +5,9 @@ using System.Collections;
 
 public class HostMigrationManager : MonoBehaviourPunCallbacks
 {
+    // ==========================================
+    // 1. CAÍDA DEL HOST (MIGRACIÓN)
+    // ==========================================
     public override void OnMasterClientSwitched(Player newMasterClient)
     {
         Debug.Log("El Host original se cayó. Transfiriendo red a: " + newMasterClient.NickName);
@@ -37,6 +40,26 @@ public class HostMigrationManager : MonoBehaviourPunCallbacks
         if (PhotonNetwork.IsMasterClient)
         {
             Debug.Log("Migración exitosa. Ahora controlo la IA de La Orden.");
+        }
+    }
+    // ==========================================
+    // 2. NUEVO: CAÍDA DE NUESTRA PROPIA CONEXIÓN
+    // ==========================================
+    public override void OnDisconnected(DisconnectCause cause)
+    {
+        // Si nos desconectamos a propósito (ej: saliendo al menú principal con un botón), no hacemos nada
+        if (cause == DisconnectCause.DisconnectByClientLogic) return;
+
+        Debug.LogWarning("Desconexión crítica de Photon. Causa: " + cause);
+
+        // Congelamos el mundo localmente para que los zombis no nos coman en la pantalla de error
+        Time.timeScale = 0f;
+
+        if (HUDManager.Instance != null)
+        {
+            // Reutilizamos la pantalla negra pasándole un mensaje de error crítico
+            string mensajeError = "CONEXIÓN PERDIDA.\nFALLO CRÍTICO EN EL ENLACE DE RED.\nMOTIVO: " + cause.ToString() + "\nPOR FAVOR, REINICIE EL SISTEMA.";
+            HUDManager.Instance.MostrarMigracion(mensajeError);
         }
     }
 }

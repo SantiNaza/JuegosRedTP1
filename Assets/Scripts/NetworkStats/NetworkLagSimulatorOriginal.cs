@@ -1,7 +1,7 @@
 using UnityEngine;
 using Photon.Pun;
 
-public class NetworkLagSimulator : MonoBehaviour
+public class NetworkLagSimulatorOriginal : MonoBehaviour
 {
     [Header("Configuración de Simulación")]
     [Tooltip("Activa o desactiva la simulación de lag")]
