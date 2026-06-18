@@ -5,7 +5,8 @@ public class LevelGenerator : MonoBehaviour
 {
     [Header("Mapa")]
     public Texture2D mapTexture;
-    public float pixelOffset = 1f; // Tamaño de cada píxel en el mundo
+    public float pixelOffset = 1f;   // Tamaño de cada píxel en el mundo
+    public float yOffset = 0.5f;     // Levanta todo el mapa en Y para que no quede enterrado
 
     [Header("Prefabs de terreno")]
     public GameObject wallPrefab;    // Negro
@@ -49,7 +50,8 @@ public class LevelGenerator : MonoBehaviour
                 Color pixelColor = mapTexture.GetPixel(x, y);
                 if (pixelColor.a < 0.1f) continue; // Ignorar transparentes
 
-                Vector3 position = new Vector3(x * pixelOffset, 0, y * pixelOffset);
+                // Aplicamos el offset en Y acá
+                Vector3 position = new Vector3(x * pixelOffset, yOffset, y * pixelOffset);
                 ProcessPixel(pixelColor, position);
             }
         }
@@ -112,12 +114,14 @@ public class LevelGenerator : MonoBehaviour
     }
 
     // Instancia un prefab y lo escala al tamaño del pixel.
-    // isFloor baja un poco la Y para evitar z-fighting con los pies.
     void SpawnTile(GameObject prefab, Vector3 pos, bool isFloor)
     {
         if (prefab == null) return;
 
+        // El piso IGNORA el yOffset y queda a nivel del suelo (apenas debajo de 0
+        // para evitar z-fighting). Todo lo demás conserva el yOffset que trae pos.
         Vector3 finalPos = isFloor ? new Vector3(pos.x, -0.01f, pos.z) : pos;
+
         GameObject instance = Instantiate(prefab, finalPos, Quaternion.identity, transform);
         AdjustScale(instance, pixelOffset);
     }
@@ -157,9 +161,12 @@ public class LevelGenerator : MonoBehaviour
         for (int i = transform.childCount - 1; i >= 0; i--)
             DestroyImmediate(transform.GetChild(i).gameObject);
 
-        playerSpawns.Clear(); enemySpawns.Clear();
-        ammoSpawns.Clear(); healSpawns.Clear();
-        doorPositions.Clear(); extractionPositions.Clear();
+        playerSpawns.Clear();
+        enemySpawns.Clear();
+        ammoSpawns.Clear();
+        healSpawns.Clear();
+        doorPositions.Clear();
+        extractionPositions.Clear();
 
         GenerateLevel();
     }
