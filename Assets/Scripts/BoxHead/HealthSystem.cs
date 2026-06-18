@@ -324,4 +324,13 @@ public class HealthSystem : MonoBehaviourPun
 
         Debug.Log("Curado +" + amount + " | Vida actual: " + currentHealth);
     }
+
+    public void AplicarMejorasAgente(float vidaExtra, float reviveMejora, float desangradoExtra)
+    {
+        maxHealth += vidaExtra;
+        currentHealth = maxHealth;
+        timeRequiredToRevive -= reviveMejora;
+        if (timeRequiredToRevive < 0.5f) timeRequiredToRevive = 0.5f; // piso de seguridad
+        maxBleedOutTime += desangradoExtra;
+    }
 }
