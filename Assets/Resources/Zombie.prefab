@@ -18,6 +18,7 @@ GameObject:
   - component: {fileID: 3519162261224820916}
   - component: {fileID: 4817767024829528433}
   - component: {fileID: 8010934603935660580}
+  - component: {fileID: 6282712462052087687}
   m_Layer: 0
   m_Name: Zombie
   m_TagString: Zombie
@@ -124,6 +125,7 @@ MonoBehaviour:
   observableSearch: 2
   ObservedComponents:
   - {fileID: 4163989924829282432}
+  - {fileID: 6282712462052087687}
   sceneViewId: 0
   InstantiationId: 0
   isRuntimeInstantiated: 0
@@ -134,7 +136,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2086414221749523252}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8efc6b1d64977384eb3405357896c656, type: 3}
   m_Name: 
@@ -234,3 +236,16 @@ MonoBehaviour:
   maxBleedOutTime: 15
   timeRequiredToRevive: 5
   reviveRadius: 2
+--- !u!114 &6282712462052087687
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2086414221749523252}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 145a85921d9d9e546ad0940477d1da58, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  interpolationSpeed: 15
