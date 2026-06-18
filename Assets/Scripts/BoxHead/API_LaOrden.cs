@@ -3,6 +3,7 @@ using UnityEngine.Networking;
 using System.Collections;
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using Photon.Pun; // NUEVO: Obligatorio para saber cuántos somos
 
 [System.Serializable]
 public class ReporteMuerte
@@ -12,7 +13,6 @@ public class ReporteMuerte
     public float tiempo;
 }
 
-// NUEVO: La estructura para decodificar lo que bajamos
 [System.Serializable]
 public class ReporteDescargado
 {
@@ -68,7 +68,7 @@ public class API_LaOrden : MonoBehaviour
             }
         }
 
-        // 2. Esperamos 2 segundos para darle tiempo a Google de guardar los datos de todos los amigos muertos
+        // 2. Esperamos 2 segundos para darle tiempo a Google de guardar los datos de todos
         yield return new WaitForSeconds(2f);
 
         // 3. DESCARGAMOS LOS ÚLTIMOS REGISTROS
@@ -87,13 +87,22 @@ public class API_LaOrden : MonoBehaviour
                 // Traducimos el JSON a una lista de C#
                 List<ReporteDescargado> ultimosReportes = JsonConvert.DeserializeObject<List<ReporteDescargado>>(jsonRespuesta);
 
-                // Armamos el texto estético de terminal
                 string textoTerminal = "ARCHIVOS ANALÓGICOS RECUPERADOS:\n----------------------------------\n";
 
-                foreach (ReporteDescargado rep in ultimosReportes)
+                // --- LA MAGIA ACÁ ---
+                // 1. Preguntamos cuántos jugadores hay vivos/conectados en esta partida específica
+                int jugadoresEnPartida = PhotonNetwork.CurrentRoom != null ? PhotonNetwork.CurrentRoom.PlayerCount : 1;
+
+                // 2. Calculamos desde qué índice arrancar a leer para agarrar SOLO los últimos de la lista
+                int startIndex = Mathf.Max(0, ultimosReportes.Count - jugadoresEnPartida);
+
+                // 3. Iteramos únicamente sobre los que nos importan
+                for (int i = startIndex; i < ultimosReportes.Count; i++)
                 {
+                    ReporteDescargado rep = ultimosReportes[i];
                     textoTerminal += $"> Agente {rep.agente} | Bajas: {rep.kills} | Extracción: {rep.tiempo}\n";
                 }
+                // --------------------
 
                 textoTerminal += "----------------------------------\nFIN DE TRANSMISIÓN.";
 
