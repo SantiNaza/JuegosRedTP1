@@ -1,6 +1,7 @@
 using UnityEngine;
 using Photon.Pun;
 using System.Collections;
+using System.Collections.Generic;
 using Unity.Services.RemoteConfig;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
@@ -8,7 +9,8 @@ using System.Threading.Tasks;
 
 public class WaveManager : MonoBehaviourPun
 {
-    public Transform[] spawnPoints;
+    // YA NO se asigna a mano: lo tomamos del LevelGenerator
+    private List<Vector3> enemySpawnPoints;
 
     [Header("Arrastra el Prefab del Zombie aquí")]
     public GameObject zombiePrefab;
@@ -20,19 +22,15 @@ public class WaveManager : MonoBehaviourPun
 
     async void Start()
     {
-        // --- FIX: ¿Venimos del menú o le dimos Play a la escena? ---
         if (PhotonNetwork.InRoom)
         {
-            // Si ya estamos en una sala (venimos del menú), arrancamos de una
             ComprobarYArrancar();
         }
         else if (PhotonManager.Instance != null)
         {
-            // Si no estamos en una sala (Play desde el editor), esperamos el evento
             PhotonManager.Instance.OnRoom += ComprobarYArrancar;
         }
 
-        // --- INICIO DE LÓGICA LIVE-OPS ---
         if (PhotonNetwork.IsMasterClient)
         {
             if (UnityServices.State == ServicesInitializationState.Uninitialized)
@@ -52,7 +50,6 @@ public class WaveManager : MonoBehaviourPun
             PhotonManager.Instance.OnRoom -= ComprobarYArrancar;
         }
 
-        // Es buena práctica desuscribirse de los eventos al destruir el objeto
         RemoteConfigService.Instance.FetchCompleted -= AplicarConfiguracionRemota;
     }
 
@@ -66,7 +63,9 @@ public class WaveManager : MonoBehaviourPun
     {
         if (PhotonNetwork.IsMasterClient)
         {
-            // 3. PRIMER PULL: Cuando el Master Client arranca la partida, pedimos los datos a la nube
+            // Tomamos los spawnpoints rojos que generó el mapa
+            CargarSpawnPointsDelMapa();
+
             if (UnityServices.State == ServicesInitializationState.Initialized)
             {
                 RemoteConfigService.Instance.FetchConfigs(new userAttributes(), new appAttributes());
@@ -76,23 +75,46 @@ public class WaveManager : MonoBehaviourPun
         }
     }
 
+    private void CargarSpawnPointsDelMapa()
+    {
+        LevelGenerator generator = FindObjectOfType<LevelGenerator>();
+
+        if (generator == null)
+        {
+            Debug.LogError("WaveManager no encontró un LevelGenerator en la escena.");
+            return;
+        }
+
+        enemySpawnPoints = generator.enemySpawns;
+
+        if (enemySpawnPoints == null || enemySpawnPoints.Count == 0)
+        {
+            Debug.LogError("El LevelGenerator no tiene enemySpawns. " +
+                "Asegurate de que genere el mapa ANTES que el WaveManager (Script Execution Order).");
+        }
+    }
+
     IEnumerator StartWave()
     {
         int zombiesToSpawn = currentWave * 5;
 
         for (int i = 0; i < zombiesToSpawn; i++)
         {
-            if (zombiePrefab != null)
-            {
-                Transform spawnPoint = spawnPoints[Random.Range(0, spawnPoints.Length)];
-                PhotonNetwork.Instantiate(zombiePrefab.name, spawnPoint.position, Quaternion.identity);
-                zombiesAlive++;
-            }
-            else
+            if (zombiePrefab == null)
             {
                 Debug.LogError("¡Falta asignar el Prefab del Zombie en el WaveManager!");
                 break;
             }
+
+            if (enemySpawnPoints == null || enemySpawnPoints.Count == 0)
+            {
+                Debug.LogError("No hay spawnpoints de enemigos en el mapa (pixeles rojos).");
+                break;
+            }
+
+            Vector3 spawnPos = enemySpawnPoints[Random.Range(0, enemySpawnPoints.Count)];
+            PhotonNetwork.Instantiate(zombiePrefab.name, spawnPos, Quaternion.identity);
+            zombiesAlive++;
 
             yield return new WaitForSeconds(timeBetweenSpawns);
         }
@@ -113,8 +135,6 @@ public class WaveManager : MonoBehaviourPun
         yield return new WaitForSeconds(3f);
         currentWave++;
 
-        // 4. SEGUNDO PULL: Justo antes de la siguiente oleada, volvemos a consultar a la nube.
-        // ¡Acá es donde se aplica tu cambio en vivo desde el Dashboard!
         if (UnityServices.State == ServicesInitializationState.Initialized)
         {
             RemoteConfigService.Instance.FetchConfigs(new userAttributes(), new appAttributes());

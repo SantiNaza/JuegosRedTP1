@@ -180,4 +180,29 @@ public class PlayerHealth : MonoBehaviourPun, IOnEventCallback
             OnAnyPlayerDeath?.Invoke(deadPlayerActorNumber);
         }
     }
+
+    public void Heal(float amount)
+    {
+        if (amount <= 0f)
+            return;
+
+        if (isDead)
+            return;
+
+        photonView.RPC("RPC_Heal", RpcTarget.All, amount);
+    }
+
+    [PunRPC]
+    public void RPC_Heal(float amount)
+    {
+        if (isDead)
+            return;
+
+        currentHealth += amount;
+        currentHealth = Mathf.Clamp(currentHealth, 0f, maxHealth);
+
+        healthBar.SetHealth(currentHealth, maxHealth);
+
+        Debug.Log("Vida tras curación: " + currentHealth);
+    }
 }

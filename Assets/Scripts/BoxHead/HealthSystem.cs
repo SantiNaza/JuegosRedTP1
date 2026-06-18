@@ -299,4 +299,27 @@ public class HealthSystem : MonoBehaviourPun
     {
         if (photonView.IsMine) chapasRecogidas.Clear();
     }
+
+    public void Heal(float amount)
+    {
+        if (amount <= 0f)
+            return;
+
+        // Un jugador caído no se cura con el item (se revive con la E)
+        if (isDowned)
+            return;
+
+        photonView.RPC(nameof(RPC_Heal), RpcTarget.All, amount);
+    }
+
+    [PunRPC]
+    public void RPC_Heal(float amount)
+    {
+        if (isDowned)
+            return;
+
+        currentHealth = Mathf.Min(currentHealth + amount, maxHealth);
+
+        Debug.Log("Curado +" + amount + " | Vida actual: " + currentHealth);
+    }
 }
