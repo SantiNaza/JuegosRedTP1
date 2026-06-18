@@ -67,8 +67,8 @@ public class HUDManager : MonoBehaviour
 
                 if (slot.textoNombre != null)
                 {
-                    string prefijo = health.photonView.IsMine ? "[VOS] " : "";
-                    slot.textoNombre.text = prefijo + health.photonView.Owner.NickName;
+                    //string prefijo = health.photonView.IsMine ? "[VOS] " : "";
+                    slot.textoNombre.text = health.photonView.Owner.NickName;
 
                     if (health.photonView.Owner.CustomProperties.TryGetValue("color", out object indexColor))
                     {
