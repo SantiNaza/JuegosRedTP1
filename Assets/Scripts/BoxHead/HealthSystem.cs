@@ -60,6 +60,9 @@ public class HealthSystem : MonoBehaviourPun
         bool isSomeoneNear = false;
         bool isSomeonePressingE = false;
 
+        // Asumimos un tiempo por defecto por si algo falla, pero lo vamos a sobrescribir
+        float tiempoParaSerRevivido = 3f;
+
         Collider[] colliders = Physics.OverlapSphere(transform.position, reviveRadius);
         foreach (Collider col in colliders)
         {
@@ -69,10 +72,13 @@ public class HealthSystem : MonoBehaviourPun
                 if (allyHealth != null && !allyHealth.isDowned)
                 {
                     isSomeoneNear = true;
-                    // Ahora esto funciona perfecto porque el RPC mantiene la variable actualizada
                     if (allyHealth.isPressingE)
                     {
                         isSomeonePressingE = true;
+
+                        // ¡LA MAGIA DEL PARAMÉDICO!
+                        // Leemos la estadística del aliado que nos está salvando, no la nuestra.
+                        tiempoParaSerRevivido = allyHealth.timeRequiredToRevive;
                         break;
                     }
                 }
@@ -84,16 +90,18 @@ public class HealthSystem : MonoBehaviourPun
 
         if (isSomeonePressingE)
         {
-            bleedOutTimer = maxBleedOutTime;
+            bleedOutTimer = maxBleedOutTime; // Congelamos tu desangrado
             reviveTimer += Time.deltaTime;
 
-            if (reviveTimer >= timeRequiredToRevive)
+            // Usamos la velocidad del paramédico para saber si ya nos levantó
+            if (reviveTimer >= tiempoParaSerRevivido)
             {
                 photonView.RPC("RPC_Revive", RpcTarget.All);
                 return;
             }
 
-            int reviveSegundos = Mathf.CeilToInt(timeRequiredToRevive - reviveTimer);
+            // Calculamos los segundos restantes basándonos en el paramédico
+            int reviveSegundos = Mathf.CeilToInt(tiempoParaSerRevivido - reviveTimer);
             currentText = $"¡ESTABILIZANDO!\nReviviendo en {reviveSegundos}s";
             colorState = 3;
         }
