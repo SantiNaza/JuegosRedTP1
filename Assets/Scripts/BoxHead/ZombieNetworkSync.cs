@@ -19,6 +19,18 @@ public class ZombieNetworkSync : MonoBehaviourPun, IPunObservable
     {
         networkPosition = transform.position;
         networkRotation = transform.rotation;
+
+        // NUEVO: Apagamos las físicas locales para los clientes
+        if (!photonView.IsMine)
+        {
+            Rigidbody rb = GetComponent<Rigidbody>();
+            if (rb != null)
+            {
+                // Al volverlo Kinematic, la gravedad y los choques locales dejan de afectarlo.
+                // Se va a mover y rotar pura y exclusivamente por lo que dicte el Lerp de red.
+                rb.isKinematic = true;
+            }
+        }
     }
 
     void Update()
