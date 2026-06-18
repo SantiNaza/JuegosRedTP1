@@ -734,6 +734,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   moveSpeed: 5
   jumpForce: 0
+  sprintMultiplier: 1.5
+  maxStamina: 4
   groundCheckDistance: 1.1
   groundLayer:
     serializedVersion: 2
