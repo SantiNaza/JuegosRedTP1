@@ -15,13 +15,11 @@ public class PlayerSpawner : MonoBehaviour
     private void Start()
     {
         if (PhotonNetwork.InRoom)
-        {
             SpawnPlayer();
-        }
-        else
-        {
+        else if (PhotonManager.Instance != null)
             PhotonManager.Instance.OnRoom += SpawnPlayer;
-        }
+        else
+            Debug.LogWarning("No estás en una room y no hay PhotonManager. No se spawnea.");
     }
 
     private void SpawnPlayer()

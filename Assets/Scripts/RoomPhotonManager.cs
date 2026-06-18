@@ -14,6 +14,7 @@ public class RoomPhotonManager : MonoBehaviourPunCallbacks
 
     [Header("Scenes")]
     [SerializeField] private string mainMenuSceneName = "Menu";
+    [SerializeField] private string characterSelectSceneName = "CharacterSelect"; 
     [SerializeField] private string gameSceneName = "Gameplay";
 
     [Header("Room Settings")]
@@ -46,6 +47,8 @@ public class RoomPhotonManager : MonoBehaviourPunCallbacks
 
         ShowRoomPanel();
     }
+
+
 
     public override void OnConnectedToMaster()
     {
@@ -144,7 +147,7 @@ public class RoomPhotonManager : MonoBehaviourPunCallbacks
         PhotonNetwork.CurrentRoom.IsOpen = false;
         PhotonNetwork.CurrentRoom.IsVisible = false;
 
-        PhotonNetwork.LoadLevel(gameSceneName);
+        PhotonNetwork.LoadLevel(characterSelectSceneName);
     }
 
     public void BackToRoomMenu()

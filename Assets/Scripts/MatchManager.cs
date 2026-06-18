@@ -32,13 +32,17 @@ public class MatchManager : MonoBehaviourPunCallbacks, IOnEventCallback
     [SerializeField] private float notificationDuration = 3f;
 
     [SerializeField]
-    private Color[] playerColors = new Color[5]
+    private Color[] playerColors = new Color[9]
     {
         Color.green,
         Color.red,
         Color.blue,
         Color.yellow,
-        Color.black
+        Color.black,
+        Color.white,
+        Color.cyan,
+        Color.magenta,
+        Color.grey
     };
 
     private Coroutine notificationCoroutine;
@@ -425,13 +429,25 @@ public class MatchManager : MonoBehaviourPunCallbacks, IOnEventCallback
 
     private string GetPlayerColorHex(int actorNumber)
     {
-        int playerIndex = actorNumber - 1;
-
-        if (playerIndex < 0) playerIndex = 0;
-        if (playerIndex >= playerColors.Length) playerIndex = playerColors.Length - 1;
-
-        return ColorUtility.ToHtmlStringRGB(playerColors[playerIndex]);
+        Player player = PhotonNetwork.CurrentRoom.GetPlayer(actorNumber);
+        int index = GetPlayerColorIndex(player, actorNumber);
+        return ColorUtility.ToHtmlStringRGB(playerColors[index]);
     }
+
+    private int GetPlayerColorIndex(Player player, int actorNumber)
+    {
+        if (player != null && player.CustomProperties.TryGetValue("color", out object c))
+        {
+            int idx = (int)c;
+            if (idx >= 0 && idx < playerColors.Length) return idx;
+        }
+        // fallback al esquema viejo
+        int fallback = actorNumber - 1;
+        if (fallback < 0) fallback = 0;
+        if (fallback >= playerColors.Length) fallback = playerColors.Length - 1;
+        return fallback;
+    }
+
 
     public override void OnPlayerLeftRoom(Player otherPlayer)
     {
