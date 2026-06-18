@@ -7177,7 +7177,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   healthPickupPrefab: {fileID: 621584630249350254, guid: 1f7993abb4d91f2439a1f32a2ad0ec70, type: 3}
-  spawnHeightOffset: 0.2
+  spawnHeightOffset: 0
 --- !u!4 &118716049
 Transform:
   m_ObjectHideFlags: 0
