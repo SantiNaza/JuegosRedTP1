@@ -69,6 +69,9 @@ MonoBehaviour:
   - RPC_DestruirChapa
   - RPC_ActivarEstacion
   - RPC_RespawnAgente
+  - RPC_ConfirmPickup
+  - RPC_RequestPickup
+  - RPC_Respawn
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 1
