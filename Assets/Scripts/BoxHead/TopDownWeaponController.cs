@@ -14,6 +14,13 @@ public class TopDownWeaponController : MonoBehaviourPun
     [Header("Configuración de Drop de Cargadores")]
     public string droppedMagPrefabName = "CargadorSuelto";
 
+    [Header("Configuración de Granadas")]
+    public string prefabGranada = "GranadaFisica";
+    public int granadasActuales = 3;
+    public float fuerzaLanzamiento = 15f;
+    private bool isCooking = false;
+    private float cookTimer = 3f;
+
     [Header("Estado del Arma")]
     private int currentAmmo;
     public int cargadoresActuales = 3;
@@ -25,6 +32,8 @@ public class TopDownWeaponController : MonoBehaviourPun
     private GameObject reloadTextObj;
     private GameObject dropTextObj;
     private TextMesh dropTextMesh;
+    private GameObject grenadeTextObj;
+    private TextMesh grenadeTextMesh;
 
     [Header("Configuración de Melee")]
     public float meleeDamage = 50f;
@@ -41,19 +50,15 @@ public class TopDownWeaponController : MonoBehaviourPun
 
     void Start()
     {
-        // CLAVE 1: Todos los clones en la partida necesitan registrar la cámara local 
-        // de esta compu para poder orientar sus carteles correctamente.
         if (mainCamera == null) mainCamera = Camera.main;
 
-        // CLAVE 2: En vez de apagar el script con 'enabled = false', hacemos un return directo.
-        // Así el script queda activo y permite que LateUpdate() funcione para los enemigos/aliados.
         if (!photonView.IsMine) return;
 
         currentAmmo = magCapacity;
 
-        // Creamos los textos de recarga y drop al inicio (solo el dueño dispara el buffer)
         photonView.RPC("RPC_CrearTextoRecarga", RpcTarget.AllBuffered);
         photonView.RPC("RPC_CrearTextoDrop", RpcTarget.AllBuffered);
+        photonView.RPC("RPC_CrearTextoGranadaJugador", RpcTarget.AllBuffered);
     }
 
     public void AplicarMejoras(float dañoExtra, float fireRateMejora, int extraMag, float reloadMejora)
@@ -62,20 +67,41 @@ public class TopDownWeaponController : MonoBehaviourPun
         fireRate -= fireRateMejora;
         magCapacity += extraMag;
         reloadSpeed -= reloadMejora;
-
         currentAmmo = magCapacity;
     }
 
     void Update()
     {
-        // NUEVO: Agregamos "|| LocalPauseMenu.isPaused" para que el arma se bloquee si el menú está abierto
-        if (!photonView.IsMine || isReloading || LocalPauseMenu.isPaused) return;
+        if (!photonView.IsMine || LocalPauseMenu.isPaused) return;
 
-        // Si estamos dando la patada, bloqueamos la mira para permitir la inclinación al cielo
+        // INICIO DE COCINADO
+        if (Input.GetKeyDown(KeyCode.G) && granadasActuales > 0 && !isReloading && !isCooking)
+        {
+            photonView.RPC("RPC_EstadoCooking", RpcTarget.All, true);
+        }
+
+        if (isCooking)
+        {
+            if (Input.GetKeyUp(KeyCode.G))
+            {
+                photonView.RPC("RPC_EstadoCooking", RpcTarget.All, false);
+                LanzarGranada(cookTimer);
+            }
+            else if (cookTimer <= 0)
+            {
+                photonView.RPC("RPC_EstadoCooking", RpcTarget.All, false);
+                LanzarGranada(0.01f);
+            }
+        }
+
+        // SOLUCIÓN AL GIRO LOCO: Siempre apuntamos al mouse, incluso cocinando
         if (!isMeleeAttacking)
         {
             ApuntarHaciaElMouse();
         }
+
+        // BLOQUEO TÁCTICO: Si estamos recargando o cocinando, no podemos disparar ni soltar cargadores
+        if (isReloading || isCooking) return;
 
         if (Input.GetKeyDown(KeyCode.R) && currentAmmo < magCapacity && cargadoresActuales > 0)
         {
@@ -83,7 +109,7 @@ public class TopDownWeaponController : MonoBehaviourPun
             return;
         }
 
-        if (Input.GetKeyDown(KeyCode.G) && cargadoresActuales > 0)
+        if (Input.GetKeyDown(KeyCode.Q) && cargadoresActuales > 0)
         {
             SoltarCargador();
         }
@@ -108,6 +134,23 @@ public class TopDownWeaponController : MonoBehaviourPun
         }
     }
 
+    private void LanzarGranada(float tiempoRestante)
+    {
+        granadasActuales--;
+
+        GameObject granada = PhotonNetwork.Instantiate(prefabGranada, firePoint.position, transform.rotation);
+
+        // SOLUCIÓN A MUROS: Bajamos el ángulo de 0.3f a 0.05f para que sea un tiro casi horizontal
+        Vector3 direccionVuelo = (transform.forward + (Vector3.up * 0.05f)).normalized;
+        Vector3 velocidadFinal = direccionVuelo * fuerzaLanzamiento;
+
+        GranadaFisica scriptGranada = granada.GetComponent<GranadaFisica>();
+        if (scriptGranada != null)
+        {
+            scriptGranada.photonView.RPC("RPC_InicializarGranada", RpcTarget.All, tiempoRestante, velocidadFinal, photonView.ViewID);
+        }
+    }
+
     private IEnumerator Recargar()
     {
         isReloading = true;
@@ -125,9 +168,7 @@ public class TopDownWeaponController : MonoBehaviourPun
     private void SoltarCargador()
     {
         cargadoresActuales--;
-
         PhotonNetwork.Instantiate(droppedMagPrefabName, firePoint.position, Quaternion.identity);
-
         photonView.RPC("RPC_MostrarTextoDrop", RpcTarget.All, cargadoresActuales);
     }
 
@@ -136,23 +177,50 @@ public class TopDownWeaponController : MonoBehaviourPun
         cargadoresActuales++;
     }
 
-    // --- MÉTODOS DE TEXTO 3D ---
+    // --- MÉTODOS DE TEXTO 3D EN RED ---
 
+    [PunRPC]
+    private void RPC_CrearTextoGranadaJugador()
+    {
+        grenadeTextObj = new GameObject("TextoCooking");
+        grenadeTextObj.transform.SetParent(this.transform);
+        grenadeTextObj.transform.localPosition = new Vector3(0f, 3.5f, 0f);
+
+        grenadeTextMesh = grenadeTextObj.AddComponent<TextMesh>();
+        grenadeTextMesh.characterSize = 0.15f;
+        grenadeTextMesh.fontSize = 40;
+        grenadeTextMesh.anchor = TextAnchor.MiddleCenter;
+        grenadeTextMesh.alignment = TextAlignment.Center;
+        grenadeTextMesh.color = Color.red;
+
+        grenadeTextObj.SetActive(false);
+    }
+
+    [PunRPC]
+    public void RPC_EstadoCooking(bool cocinando)
+    {
+        isCooking = cocinando;
+        if (cocinando)
+        {
+            cookTimer = 3f;
+            if (grenadeTextObj != null) grenadeTextObj.SetActive(true);
+        }
+        else
+        {
+            if (grenadeTextObj != null) grenadeTextObj.SetActive(false);
+        }
+    }
+
+    // ... (Mantener RPC_CrearTextoRecarga, RPC_CrearTextoDrop, RPC_MostrarTextoRecarga, RPC_MostrarTextoDrop iguales) ...
     [PunRPC]
     private void RPC_CrearTextoRecarga()
     {
         reloadTextObj = new GameObject("TextoRecarga");
         reloadTextObj.transform.SetParent(this.transform);
         reloadTextObj.transform.localPosition = new Vector3(0f, 2.5f, 0f);
-
         TextMesh tm = reloadTextObj.AddComponent<TextMesh>();
         tm.text = "¡RECARGANDO!";
-        tm.characterSize = 0.15f;
-        tm.fontSize = 40;
-        tm.anchor = TextAnchor.MiddleCenter;
-        tm.alignment = TextAlignment.Center;
-        tm.color = Color.yellow;
-
+        tm.characterSize = 0.15f; tm.fontSize = 40; tm.anchor = TextAnchor.MiddleCenter; tm.alignment = TextAlignment.Center; tm.color = Color.yellow;
         reloadTextObj.SetActive(false);
     }
 
@@ -162,22 +230,13 @@ public class TopDownWeaponController : MonoBehaviourPun
         dropTextObj = new GameObject("TextoDrop");
         dropTextObj.transform.SetParent(this.transform);
         dropTextObj.transform.localPosition = new Vector3(0f, 3.0f, 0f);
-
         dropTextMesh = dropTextObj.AddComponent<TextMesh>();
-        dropTextMesh.characterSize = 0.12f;
-        dropTextMesh.fontSize = 35;
-        dropTextMesh.anchor = TextAnchor.MiddleCenter;
-        dropTextMesh.alignment = TextAlignment.Center;
-        dropTextMesh.color = Color.cyan;
-
+        dropTextMesh.characterSize = 0.12f; dropTextMesh.fontSize = 35; dropTextMesh.anchor = TextAnchor.MiddleCenter; dropTextMesh.alignment = TextAlignment.Center; dropTextMesh.color = Color.cyan;
         dropTextObj.SetActive(false);
     }
 
     [PunRPC]
-    public void RPC_MostrarTextoRecarga(bool mostrar)
-    {
-        if (reloadTextObj != null) reloadTextObj.SetActive(mostrar);
-    }
+    public void RPC_MostrarTextoRecarga(bool mostrar) { if (reloadTextObj != null) reloadTextObj.SetActive(mostrar); }
 
     [PunRPC]
     public void RPC_MostrarTextoDrop(int restantes)
@@ -186,48 +245,35 @@ public class TopDownWeaponController : MonoBehaviourPun
         {
             dropTextMesh.text = restantes + " cargadores restantes";
             dropTextObj.SetActive(true);
-
             StartCoroutine(OcultarTextoDropRutina());
         }
     }
 
-    private IEnumerator OcultarTextoDropRutina()
-    {
-        yield return new WaitForSeconds(2f);
-        if (dropTextObj != null)
-        {
-            dropTextObj.SetActive(false);
-        }
-    }
+    private IEnumerator OcultarTextoDropRutina() { yield return new WaitForSeconds(2f); if (dropTextObj != null) dropTextObj.SetActive(false); }
 
     private void LateUpdate()
     {
-        // Al estar activo el script para todos los jugadores, esta sección se va a ejecutar 
-        // continuamente en cada réplica online, obligando a los carteles a mirar de frente 
-        // a la cámara local sin importar cuánto rote el personaje sobre su propio eje.
+        // Actualización compartida de carteles que miran a la cámara
         if (mainCamera != null)
         {
-            if (reloadTextObj != null && reloadTextObj.activeSelf)
-            {
-                reloadTextObj.transform.rotation = mainCamera.transform.rotation;
-            }
+            if (reloadTextObj != null && reloadTextObj.activeSelf) reloadTextObj.transform.rotation = mainCamera.transform.rotation;
+            if (dropTextObj != null && dropTextObj.activeSelf) dropTextObj.transform.rotation = mainCamera.transform.rotation;
 
-            if (dropTextObj != null && dropTextObj.activeSelf)
+            if (isCooking && grenadeTextObj != null)
             {
-                dropTextObj.transform.rotation = mainCamera.transform.rotation;
+                cookTimer -= Time.deltaTime;
+                grenadeTextMesh.text = Mathf.Max(0, cookTimer).ToString("F1");
+                grenadeTextObj.transform.rotation = mainCamera.transform.rotation;
             }
         }
     }
 
-    // --- FIN MÉTODOS DE TEXTO ---
-
+    // ... (AtaqueMelee, ApuntarHaciaElMouse, DispararPistola, RPC_AnimacionMelee y RutinaPatadaRetroceso quedan exactamente iguales) ...
     private void ApuntarHaciaElMouse()
     {
         Plane planoSuelo = new Plane(Vector3.up, transform.position);
         Ray rayoMouse = mainCamera.ScreenPointToRay(Input.mousePosition);
-        float distanciaAlPlano;
-
-        if (planoSuelo.Raycast(rayoMouse, out distanciaAlPlano))
+        if (planoSuelo.Raycast(rayoMouse, out float distanciaAlPlano))
         {
             Vector3 puntoDeApunto = rayoMouse.GetPoint(distanciaAlPlano);
             Vector3 direccionMira = new Vector3(puntoDeApunto.x, transform.position.y, puntoDeApunto.z);
@@ -238,39 +284,26 @@ public class TopDownWeaponController : MonoBehaviourPun
     private void DispararPistola()
     {
         currentAmmo--;
-
         GameObject bulletObj = PhotonNetwork.Instantiate(bulletPrefabName, firePoint.position, firePoint.rotation);
         Bullet bulletScript = bulletObj.GetComponent<Bullet>();
-        if (bulletScript != null)
-        {
-            // Le pasamos también el ViewID de tu jugador
-            bulletScript.SetDamage(gunDamage, photonView.ViewID);
-        }
+        if (bulletScript != null) bulletScript.SetDamage(gunDamage, photonView.ViewID);
     }
 
     private void AtaqueMelee()
     {
         Vector3 centroDelGolpe = transform.position + (transform.forward * 1f);
         Collider[] impactados = Physics.OverlapSphere(centroDelGolpe, meleeRange);
-
         foreach (Collider col in impactados)
         {
             if (col.gameObject == this.gameObject) continue;
-
             Vector3 direccionEmpuje = (col.transform.position - transform.position).normalized;
             direccionEmpuje.y = 0;
-
             PhotonView targetView = col.GetComponent<PhotonView>();
             if (targetView == null) continue;
-
             if (col.CompareTag("Zombie"))
             {
                 HealthSystem targetHealth = col.GetComponent<HealthSystem>();
-                if (targetHealth != null)
-                {
-                    // Sumamos el photonView.ViewID al final
-                    targetView.RPC("RPC_TakeDamage", RpcTarget.All, kickDamage, photonView.ViewID);
-                }
+                if (targetHealth != null) targetView.RPC("RPC_TakeDamage", RpcTarget.All, kickDamage, photonView.ViewID);
                 targetView.RPC("RPC_ApplyKnockback", RpcTarget.MasterClient, direccionEmpuje * kickForce);
             }
             else if (col.CompareTag("Player"))
@@ -278,56 +311,25 @@ public class TopDownWeaponController : MonoBehaviourPun
                 targetView.RPC("RPC_ApplyKnockback", targetView.Owner, direccionEmpuje * kickForce);
             }
         }
-        // Lo agregás como la última línea de tu AtaqueMelee()
         photonView.RPC("RPC_AnimacionMelee", RpcTarget.All);
-
     }
 
-    private void OnDrawGizmosSelected()
-    {
-        Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(transform.position + (transform.forward * 1f), meleeRange);
-    }
+    [PunRPC] public void RPC_AnimacionMelee() { StartCoroutine(RutinaPatadaRetroceso()); }
 
-    [PunRPC]
-    public void RPC_AnimacionMelee()
+    private IEnumerator RutinaPatadaRetroceso()
     {
-        StartCoroutine(RutinaPatadaRetroceso());
-    }
-
-    private System.Collections.IEnumerator RutinaPatadaRetroceso()
-    {
-        // Bloqueamos el mouse para que no pelee contra la animación
         if (photonView.IsMine) isMeleeAttacking = true;
-
-        // Memorizamos adónde estábamos apuntando
         Quaternion rotacionOriginal = transform.rotation;
-
-    
-        float duracion = 0.25f;
-        float t = 0f;
-
-        // Vuelta entera de 360 grados
+        float duracion = 0.25f, t = 0f;
         while (t < duracion)
         {
             t += Time.deltaTime;
-
-            // Calculamos el porcentaje de la animación (de 0 a 1)
             float progreso = t / duracion;
-
-            // SmoothStep hace que el giro empiece rápido y frene con un poco de suavidad al final
             float anguloY = Mathf.SmoothStep(0f, 360f, progreso);
-
-            // Aplicamos el giro EXCLUSIVAMENTE en el eje Y. Cero resbalones.
             transform.rotation = rotacionOriginal * Quaternion.Euler(0f, anguloY, 0f);
-
             yield return null;
         }
-
-        // Nos aseguramos de que quede clavado exactamente en la dirección original
         transform.rotation = rotacionOriginal;
-
-        // Le devolvemos el control de la mira al jugador
         if (photonView.IsMine) isMeleeAttacking = false;
     }
 }

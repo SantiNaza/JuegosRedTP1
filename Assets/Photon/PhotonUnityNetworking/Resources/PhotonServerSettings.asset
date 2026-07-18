@@ -80,6 +80,10 @@ MonoBehaviour:
   - RPC_ProcesarRescate
   - RPC_AnimacionMelee
   - RPC_MostrarDerrota
+  - RPC_InicializarGranada
+  - RPC_VisualExplosion
+  - RPC_CrearTextoGranadaJugador
+  - RPC_EstadoCooking
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 1

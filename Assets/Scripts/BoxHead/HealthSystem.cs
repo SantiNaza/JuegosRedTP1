@@ -18,6 +18,7 @@ public class HealthSystem : MonoBehaviourPun
     public bool isPlayer = false;
     public bool isDowned = false;
     public bool isPressingE = false;
+    private bool isDead = false;
 
     public float maxBleedOutTime = 15f;
     private float bleedOutTimer;
@@ -189,7 +190,7 @@ public class HealthSystem : MonoBehaviourPun
     [PunRPC]
     public void RPC_TakeDamage(float damage, int shooterViewID)
     {
-        if (isDowned) return;
+        if (isDowned || isDead) return;
 
         currentHealth -= damage;
 
@@ -203,6 +204,7 @@ public class HealthSystem : MonoBehaviourPun
 
         if (currentHealth <= 0)
         {
+            isDead = true;
             if (isPlayer)
             {
                 photonView.RPC("RPC_EnterDownedState", RpcTarget.All);
