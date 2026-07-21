@@ -17,7 +17,6 @@ public class ZonaDeExtraccion : MonoBehaviourPun
 
     void OnTriggerEnter(Collider other)
     {
-        Debug.Log("Algo entró: " + other.name + " | tag: " + other.tag);
         if (other.CompareTag("Player"))
         {
             jugadoresAdentro.Add(other);
@@ -41,7 +40,6 @@ public class ZonaDeExtraccion : MonoBehaviourPun
         {
             tiempoRestante -= Time.deltaTime;
 
-            // LLAMAMOS AL HUD MANAGER
             if (HUDManager.Instance != null)
             {
                 string mensaje = "Extracción: " + Mathf.CeilToInt(tiempoRestante).ToString() + "...";
@@ -57,7 +55,6 @@ public class ZonaDeExtraccion : MonoBehaviourPun
         {
             tiempoRestante = tiempoParaGanar;
 
-            // LLAMAMOS AL HUD MANAGER PARA OCULTAR EL TEXTO SI SALEN DE LA ZONA
             if (HUDManager.Instance != null)
             {
                 HUDManager.Instance.OcultarTextoExtraccion();
@@ -69,10 +66,14 @@ public class ZonaDeExtraccion : MonoBehaviourPun
     {
         this.enabled = false;
 
-        // MOSTRAMOS EL MENSAJE FINAL
+        int xpGanada = API_LaOrden.GuardarExperienciaLocal(true);
+        int nivelActual = PlayerStatsConfig.GetLevel();
+
         if (HUDManager.Instance != null)
         {
-            HUDManager.Instance.MostrarTextoExtraccion("¡EXTRACCIÓN EXITOSA!", Color.green);
+            // Agregamos un aviso visual para que el jugador no piense que el juego se tildó
+            HUDManager.Instance.MostrarTextoExtraccion(
+                $"¡EXTRACCIÓN EXITOSA!\n+{xpGanada} XP | Nivel {nivelActual}\nDescargando reportes analógicos...", Color.green);
         }
 
         API_LaOrden api = FindObjectOfType<API_LaOrden>();
@@ -80,5 +81,16 @@ public class ZonaDeExtraccion : MonoBehaviourPun
         {
             api.EnviarReporteMuerte(PhotonNetwork.NickName, API_LaOrden.misKillsLocales, Time.timeSinceLevelLoad);
         }
+
+        // LA CORRECCIÓN: Le damos 12 segundos en lugar de 3.
+        // Esto permite que la API de Google responda (tarda unos 3-4 seg) y que 
+        // el jugador tenga unos 8 segundos de sobra para leer toda la pantalla negra con los puntajes.
+        Invoke(nameof(SalirDePartida), 12f);
+    }
+
+    private void SalirDePartida()
+    {
+        LocalPauseMenu.isPaused = false;
+        PhotonNetwork.LeaveRoom();
     }
 }

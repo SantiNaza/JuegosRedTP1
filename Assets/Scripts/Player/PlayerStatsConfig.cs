@@ -2,38 +2,58 @@ using UnityEngine;
 
 public enum StatType
 {
-    Damage,        // arma
-    MagCapacity,   // arma
-    FireRate,      // arma
-    ReloadSpeed,   // arma
-    MaxHealth,     // agente
-    MoveSpeed,     // agente
-    ReviveSpeed,   // agente
-    BleedOutTime   // agente
+    Damage, MagCapacity, FireRate, ReloadSpeed,
+    MaxHealth, MoveSpeed, ReviveSpeed, BleedOutTime
 }
 
 public static class PlayerStatsConfig
 {
-    public const int TotalPoints = 10;
     public const int MaxPerStat = 3;
-
-    // NUESTRA CLAVE DE ENCRIPTACIÓN SIMÉTRICA
     private const int ClaveXOR = 1986;
 
-    // Cuánto suma CADA punto invertido, por stat.
-    // (los de "menor tiempo" van en negativo porque reducen)
+    // --- SISTEMA DE NIVELES Y XP ---
+    public static int GetXP()
+    {
+        // Si no existe la partida guardada, devolvemos 0 directamente sin desencriptar nada
+        if (!PlayerPrefs.HasKey("experiencia_agente"))
+        {
+            return 0;
+        }
+
+        // Si existe, lo leemos y lo desencriptamos
+        return PlayerPrefs.GetInt("experiencia_agente") ^ ClaveXOR;
+    }
+
+    public static void SetXP(int xp)
+    {
+        PlayerPrefs.SetInt("experiencia_agente", xp ^ ClaveXOR);
+        Save();
+    }
+
+    public static int GetLevel()
+    {
+        int currentXP = GetXP();
+        // Cada 100 XP es un nivel. Empezás en Nivel 1 (0 XP).
+        return (currentXP / 100) + 1;
+    }
+
+    // LA CORRECCIÓN: Nivel 1 (1+9) = 10 puntos. Nivel 2 (2+9) = 11 puntos.
+    public static int TotalPointsAvailable() => GetLevel() + 9;
+
+    // ---------------------------------------
+
     public static float PerPoint(StatType s)
     {
         switch (s)
         {
-            case StatType.Damage: return 10f;   // +10 daño por punto
-            case StatType.MagCapacity: return 5f;    // +5 balas
-            case StatType.FireRate: return 0.05f; // -0.05s entre tiros
-            case StatType.ReloadSpeed: return 0.3f;  // -0.3s de recarga
-            case StatType.MaxHealth: return 25f;   // +25 vida
-            case StatType.MoveSpeed: return 0.5f;  // +0.5 velocidad
-            case StatType.ReviveSpeed: return 1f;  // -1s revivir
-            case StatType.BleedOutTime: return 3f;    // +3s desangrado
+            case StatType.Damage: return 10f;
+            case StatType.MagCapacity: return 5f;
+            case StatType.FireRate: return 0.05f;
+            case StatType.ReloadSpeed: return 0.3f;
+            case StatType.MaxHealth: return 25f;
+            case StatType.MoveSpeed: return 0.5f;
+            case StatType.ReviveSpeed: return 1f;
+            case StatType.BleedOutTime: return 3f;
         }
         return 0f;
     }
@@ -54,19 +74,12 @@ public static class PlayerStatsConfig
         return s.ToString();
     }
 
-    // --- LÓGICA XOR CON RETRO-COMPATIBILIDAD ---
     public static int GetLevel(StatType s)
     {
         int valorCrudo = PlayerPrefs.GetInt("stat_" + s, 0);
-
-        if (valorCrudo <= TotalPoints)
-        {
-            return valorCrudo; // Era un guardado viejo sin encriptar
-        }
-        else
-        {
-            return valorCrudo ^ ClaveXOR; // Desencriptamos
-        }
+        // Retrocompatibilidad (si el valor grabado no está encriptado)
+        if (valorCrudo <= 10) return valorCrudo;
+        else return valorCrudo ^ ClaveXOR;
     }
 
     public static void SetLevel(StatType s, int level)
@@ -74,7 +87,7 @@ public static class PlayerStatsConfig
         int valorEncriptado = level ^ ClaveXOR;
         PlayerPrefs.SetInt("stat_" + s, valorEncriptado);
     }
-    // ------------------------------------------
+
     public static void Save() => PlayerPrefs.Save();
 
     public static int TotalSpent()
@@ -85,5 +98,6 @@ public static class PlayerStatsConfig
         return sum;
     }
 
-    public static int PointsLeft() => TotalPoints - TotalSpent();
+    // Calcula restando los gastados a tu total dinámico base 10
+    public static int PointsLeft() => TotalPointsAvailable() - TotalSpent();
 }

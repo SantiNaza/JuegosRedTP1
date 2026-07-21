@@ -47,6 +47,7 @@ public class TopDownWeaponController : MonoBehaviourPun
     private bool isMeleeAttacking = false;
 
     public Camera mainCamera;
+    private Vector3 puntoDeMiraExacto; // Guarda la coordenada exacta del mouse
 
     void Start()
     {
@@ -273,20 +274,35 @@ public class TopDownWeaponController : MonoBehaviourPun
     {
         Plane planoSuelo = new Plane(Vector3.up, transform.position);
         Ray rayoMouse = mainCamera.ScreenPointToRay(Input.mousePosition);
-        if (planoSuelo.Raycast(rayoMouse, out float distanciaAlPlano))
+        float distanciaAlPlano;
+
+        if (planoSuelo.Raycast(rayoMouse, out distanciaAlPlano))
         {
             Vector3 puntoDeApunto = rayoMouse.GetPoint(distanciaAlPlano);
             Vector3 direccionMira = new Vector3(puntoDeApunto.x, transform.position.y, puntoDeApunto.z);
             transform.LookAt(direccionMira);
+
+            // GUARDAMOS EL PUNTO EXACTO PARA LA BALA (alineado a la altura del cañón)
+            puntoDeMiraExacto = new Vector3(puntoDeApunto.x, firePoint.position.y, puntoDeApunto.z);
         }
     }
 
     private void DispararPistola()
     {
         currentAmmo--;
-        GameObject bulletObj = PhotonNetwork.Instantiate(bulletPrefabName, firePoint.position, firePoint.rotation);
+
+        // Calculamos la rotación de la bala para que cruce desde el cañón hacia el mouse
+        Vector3 direccionDisparo = (puntoDeMiraExacto - firePoint.position).normalized;
+        Quaternion rotacionBala = Quaternion.LookRotation(direccionDisparo);
+
+        // Instanciamos usando la nueva rotación corregida
+        GameObject bulletObj = PhotonNetwork.Instantiate(bulletPrefabName, firePoint.position, rotacionBala);
+
         Bullet bulletScript = bulletObj.GetComponent<Bullet>();
-        if (bulletScript != null) bulletScript.SetDamage(gunDamage, photonView.ViewID);
+        if (bulletScript != null)
+        {
+            bulletScript.SetDamage(gunDamage, photonView.ViewID);
+        }
     }
 
     private void AtaqueMelee()

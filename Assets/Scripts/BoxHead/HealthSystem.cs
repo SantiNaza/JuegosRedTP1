@@ -72,6 +72,9 @@ public class HealthSystem : MonoBehaviourPun
         bool isSomeonePressingE = false;
         float tiempoParaSerRevivido = 5f;
 
+        // LA SOLUCIÓN: Creamos una variable acá arriba para memorizar quién nos salva
+        HealthSystem aliadoSalvador = null;
+
         Collider[] colliders = Physics.OverlapSphere(transform.position, reviveRadius);
         foreach (Collider col in colliders)
         {
@@ -86,6 +89,10 @@ public class HealthSystem : MonoBehaviourPun
                         isSomeonePressingE = true;
                         // LEEMOS LA VELOCIDAD DEL PARAMÉDICO POR RED
                         tiempoParaSerRevivido = allyHealth.velocidadRevivirDeRed;
+
+                        // GUARDAMOS AL PARAMÉDICO EN LA MEMORIA
+                        aliadoSalvador = allyHealth;
+
                         break;
                     }
                 }
@@ -103,6 +110,13 @@ public class HealthSystem : MonoBehaviourPun
             if (reviveTimer >= tiempoParaSerRevivido)
             {
                 photonView.RPC("RPC_Revive", RpcTarget.All);
+
+                // LE DECIMOS AL ALIADO QUE SUME LA XP (Usando la variable que memorizamos)
+                if (aliadoSalvador != null)
+                {
+                    aliadoSalvador.photonView.RPC("RPC_SumarRescate", aliadoSalvador.photonView.Owner);
+                }
+
                 return;
             }
 
@@ -140,6 +154,12 @@ public class HealthSystem : MonoBehaviourPun
             lastDisplayedText = currentText;
             photonView.RPC("RPC_ActualizarTextoCaido", RpcTarget.All, true, currentText, colorState);
         }
+    }
+
+    [PunRPC]
+    public void RPC_SumarRescate()
+    {
+        if (photonView.IsMine) API_LaOrden.aliadosRescatadosLocales++;
     }
 
     [PunRPC]
@@ -288,6 +308,9 @@ public class HealthSystem : MonoBehaviourPun
                 photonView.RPC("RPC_LimpiarChapas", RpcTarget.All);
 
                 if (Camera.main != null) Camera.main.gameObject.AddComponent<GhostCamera>();
+
+                // Guardamos la XP antes de destruir el personaje, enviando 'false' porque no sobrevivió
+                API_LaOrden.GuardarExperienciaLocal(false);
 
                 API_LaOrden api = FindObjectOfType<API_LaOrden>();
                 if (api != null)

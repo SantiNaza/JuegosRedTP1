@@ -91,7 +91,8 @@ public class StatAllocatorUI : MonoBehaviour
 
     void RefreshAll()
     {
-        pointsLabel.text = $"Puntos restantes: {PlayerStatsConfig.PointsLeft()} / {PlayerStatsConfig.TotalPoints}";
+        // LA CORRECCIÓN: Llamamos a TotalPointsAvailable() y de paso le mostramos el Nivel al jugador
+        pointsLabel.text = $"Nivel {PlayerStatsConfig.GetLevel()} | Puntos: {PlayerStatsConfig.PointsLeft()} / {PlayerStatsConfig.TotalPointsAvailable()}";
 
         bool noPointsLeft = PlayerStatsConfig.PointsLeft() <= 0;
 

@@ -67,7 +67,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 8bd3d7bf31629b244a57bf5d93316bb6, type: 2}
+  - {fileID: 2100000, guid: 5e1c92dfdb60f324db96ca8d79987227, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -221,7 +221,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &5910995700026750120
 RectTransform:
   m_ObjectHideFlags: 0
@@ -395,7 +395,6 @@ MonoBehaviour:
   fuerzaEmpuje: 12
   esferaAmarilla: {fileID: 346897150754892471}
   modeloGranada: {fileID: 9009093379185643902}
-  textoTemporizador: {fileID: 7768721036142228153}
 --- !u!114 &8272053065828376415
 MonoBehaviour:
   m_ObjectHideFlags: 0

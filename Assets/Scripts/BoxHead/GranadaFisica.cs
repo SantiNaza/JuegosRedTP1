@@ -11,12 +11,31 @@ public class GranadaFisica : MonoBehaviourPun
     [Header("Visuales")]
     public GameObject esferaAmarilla;
     public MeshRenderer modeloGranada;
-    public TextMesh textoTemporizador;
+
+    // Variables para el texto generado por código
+    private GameObject textoObj;
+    private TextMesh textoTemporizador;
 
     private float timer;
     private bool estaActiva = false;
     private int ownerViewID;
     private bool yaExploto = false;
+
+    void Awake()
+    {
+        // HACEMOS LO MISMO QUE EN TU JUGADOR: Creamos el texto por código
+        textoObj = new GameObject("TextoGranada");
+        textoObj.transform.SetParent(this.transform);
+        textoObj.transform.localPosition = new Vector3(0f, 1f, 0f);
+
+        textoTemporizador = textoObj.AddComponent<TextMesh>();
+        // Usamos TUS valores exactos que se ven geniales
+        textoTemporizador.characterSize = 0.15f;
+        textoTemporizador.fontSize = 40;
+        textoTemporizador.anchor = TextAnchor.MiddleCenter;
+        textoTemporizador.alignment = TextAlignment.Center;
+        textoTemporizador.color = Color.red;
+    }
 
     [PunRPC]
     public void RPC_InicializarGranada(float tiempoRestante, Vector3 velocidad, int shooterID)
@@ -27,8 +46,7 @@ public class GranadaFisica : MonoBehaviourPun
 
         if (esferaAmarilla != null)
         {
-            // MAGIA: El código escala la esfera amarilla automáticamente para que mida el doble del radio (el diámetro).
-            // Así, el área visual siempre será EXACTAMENTE IGUAL al área de daño matemático.
+            // Ajustamos el tamaño de la esfera visual al daño real
             esferaAmarilla.transform.localScale = new Vector3(radioExplosion * 2, radioExplosion * 2, radioExplosion * 2);
             esferaAmarilla.SetActive(false);
         }
@@ -37,7 +55,7 @@ public class GranadaFisica : MonoBehaviourPun
         if (rb != null)
         {
             rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
-            rb.velocity = velocidad;
+            rb.velocity = velocidad; // Sincronizamos la fuerza del lanzamiento en red
         }
     }
 
@@ -58,19 +76,14 @@ public class GranadaFisica : MonoBehaviourPun
         }
     }
 
-    // NUEVO: Desvinculamos el texto del giro de la granada
     void LateUpdate()
     {
-        if (!estaActiva || yaExploto || textoTemporizador == null) return;
+        // 1. Evitamos que el texto gire locamente cuando la granada rueda por el piso
+        // 2. Lo hacemos mirar de frente a la cámara local
+        if (!estaActiva || yaExploto || textoObj == null || Camera.main == null) return;
 
-        // 1. Evitamos que el texto "orbite" fijando su posición absoluta justo encima del centro
-        textoTemporizador.transform.position = transform.position + (Vector3.up * 1f);
-
-        // 2. Lo hacemos mirar a la cámara (Billboarding)
-        if (Camera.main != null)
-        {
-            textoTemporizador.transform.rotation = Camera.main.transform.rotation;
-        }
+        textoObj.transform.position = transform.position + (Vector3.up * 1f);
+        textoObj.transform.rotation = Camera.main.transform.rotation;
     }
 
     private void Explotar()
@@ -113,8 +126,17 @@ public class GranadaFisica : MonoBehaviourPun
     {
         yaExploto = true;
         if (modeloGranada != null) modeloGranada.enabled = false;
-        if (textoTemporizador != null) textoTemporizador.gameObject.SetActive(false);
+        if (textoObj != null) textoObj.SetActive(false);
         if (esferaAmarilla != null) esferaAmarilla.SetActive(true);
+
+        // FRENAMOS LA FÍSICA: Esto hace que la explosión se quede clavada en el piso
+        Rigidbody rb = GetComponent<Rigidbody>();
+        if (rb != null)
+        {
+            rb.isKinematic = true;
+            rb.velocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+        }
     }
 
     private void DestruirEnRed()

@@ -28,10 +28,31 @@ public class API_LaOrden : MonoBehaviour
     public static int misKillsLocales = 0;
     public static bool yaEnviado = false;
 
+    public static int aliadosRescatadosLocales = 0;
+    public static int aliadosRevividosLocales = 0;
+
+    // Esta función calcula toda la matemática y la manda al encriptador
+    public static int GuardarExperienciaLocal(bool sobrevivio)
+    {
+        int xpGanada = 0;
+        xpGanada += misKillsLocales * 5;
+        xpGanada += aliadosRescatadosLocales * 5;
+        xpGanada += aliadosRevividosLocales * 10;
+
+        if (sobrevivio) xpGanada += 15;
+
+        int xpActual = PlayerStatsConfig.GetXP();
+        PlayerStatsConfig.SetXP(xpActual + xpGanada);
+
+        return xpGanada; // Devolvemos el número para mostrarlo en pantalla
+    }
+
     void Awake()
     {
         yaEnviado = false;
         misKillsLocales = 0;
+        aliadosRescatadosLocales = 0;
+        aliadosRevividosLocales = 0;
     }
 
     public void EnviarReporteMuerte(string nombreAgente, int totalKills, float tiempoPartida)
