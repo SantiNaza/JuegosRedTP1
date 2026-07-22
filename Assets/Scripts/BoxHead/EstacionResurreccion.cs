@@ -9,6 +9,8 @@ public class EstacionResurreccion : MonoBehaviourPun
     public string nombrePrefabJugador = "Player";
     private bool yaUsada = false;
     private bool rescateEjecutado = false; // Candado de red
+    // Agregamos una variable global estática para memorizar el último respawn
+    private static float ultimoRespawnTime = 0f;
 
     void OnTriggerStay(Collider other)
     {
@@ -94,6 +96,12 @@ public class EstacionResurreccion : MonoBehaviourPun
     [PunRPC]
     public void RPC_RespawnAgente(Vector3 posicionRescate, string prefabName)
     {
+        // EL CANDADO DEFINITIVO ANTI-CLONES
+        // Si el jugador recibe dos órdenes de revivir en menos de 2 segundos, ignora la segunda.
+        if (Time.time - ultimoRespawnTime < 2f) return;
+
+        ultimoRespawnTime = Time.time; // Cerramos la puerta
+
         GhostCamera gc = FindObjectOfType<GhostCamera>();
 
         // CORRECCIÓN MAGISTRAL: Borramos el componente, NO el GameObject entero.
