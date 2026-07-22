@@ -13,8 +13,9 @@ public class WaveManager : MonoBehaviourPun
     // YA NO se asigna a mano: lo tomamos del LevelGenerator
     private List<Vector3> enemySpawnPoints;
 
-    [Header("Arrastra el Prefab del Zombie aquí")]
-    public GameObject zombiePrefab;
+    // NUEVO: Ahora es un Array para aceptar varios tipos de zombies
+    [Header("Arrastra los Prefabs de los Zombies aquí")]
+    public GameObject[] zombiePrefabs; 
 
     private int currentWave = 1;
     private int zombiesAlive = 0;
@@ -23,7 +24,7 @@ public class WaveManager : MonoBehaviourPun
 
     public static bool fuegoAmigoActivado = false;
 
-    // NUEVO: Variables para detectar la derrota
+    // Variables para detectar la derrota
     private bool partidaIniciada = false;
     private bool juegoTerminado = false;
 
@@ -50,7 +51,7 @@ public class WaveManager : MonoBehaviourPun
         }
     }
 
-    // NUEVO: Método Update para vigilar la vida del equipo
+    // Método Update para vigilar la vida del equipo
     void Update()
     {
         // Solo el Host vigila el estado de la partida
@@ -94,7 +95,7 @@ public class WaveManager : MonoBehaviourPun
         // Leemos la velocidad de los zombis que ya tenías
         timeBetweenSpawns = RemoteConfigService.Instance.appConfig.GetFloat("SpawnRate", 1.0f);
 
-        // NUEVO: Leemos nuestra llave de fuego amigo desde la nube
+        // Leemos nuestra llave de fuego amigo desde la nube
         fuegoAmigoActivado = RemoteConfigService.Instance.appConfig.GetBool("fuego_amigo_activado", false);
 
         Debug.Log("Live-Ops | Spawns: " + timeBetweenSpawns + "s | Fuego Amigo: " + fuegoAmigoActivado);
@@ -141,9 +142,10 @@ public class WaveManager : MonoBehaviourPun
 
         for (int i = 0; i < zombiesToSpawn; i++)
         {
-            if (zombiePrefab == null)
+            // NUEVO: Verificamos que el array tenga prefabs asignados
+            if (zombiePrefabs == null || zombiePrefabs.Length == 0)
             {
-                Debug.LogError("¡Falta asignar el Prefab del Zombie en el WaveManager!");
+                Debug.LogError("¡Falta asignar los Prefabs de Zombies en el WaveManager!");
                 break;
             }
 
@@ -160,8 +162,11 @@ public class WaveManager : MonoBehaviourPun
             {
                 spawnPos = hit.position;
                 
+                // NUEVO: Elegimos un zombie al azar del array
+                GameObject zombieElegido = zombiePrefabs[Random.Range(0, zombiePrefabs.Length)];
+
                 // Instanciamos el objeto de sala para que persista con el Host Migration
-                PhotonNetwork.InstantiateRoomObject(zombiePrefab.name, spawnPos, Quaternion.identity);
+                PhotonNetwork.InstantiateRoomObject(zombieElegido.name, spawnPos, Quaternion.identity);
                 zombiesAlive++;
             }
             else
@@ -196,7 +201,7 @@ public class WaveManager : MonoBehaviourPun
         StartCoroutine(StartWave());
     }
 
-    // NUEVO: Método RPC para decirle al HUD que muestre la derrota
+    // Método RPC para decirle al HUD que muestre la derrota
     [PunRPC]
     private void RPC_MostrarDerrota()
     {
