@@ -8,6 +8,7 @@ public class EstacionResurreccion : MonoBehaviourPun
     [Header("Configuración")]
     public string nombrePrefabJugador = "Player";
     private bool yaUsada = false;
+    private bool rescateEjecutado = false; // Candado de red
 
     void OnTriggerStay(Collider other)
     {
@@ -71,7 +72,10 @@ public class EstacionResurreccion : MonoBehaviourPun
     [PunRPC]
     public void RPC_ProcesarRescate(int viewIdSalvador, int actorARevivir)
     {
-        if (!PhotonNetwork.IsMasterClient) return;
+        // Si no somos el host, o si el totem ya procesó un cuerpo, cortamos acá
+        if (!PhotonNetwork.IsMasterClient || rescateEjecutado) return;
+
+        rescateEjecutado = true; // Cerramos el candado para que no haya clones
 
         Player agenteCaido = PhotonNetwork.CurrentRoom.GetPlayer(actorARevivir);
 

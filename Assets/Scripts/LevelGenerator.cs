@@ -23,12 +23,14 @@ public class LevelGenerator : MonoBehaviour
     public GameObject enemySpawnMarker;    // Rojo
     public GameObject ammoSpawnMarker;     // Cyan
     public GameObject healSpawnMarker;     // Magenta
+    public GameObject grenadeSpawnMarker;  // NUEVO: Naranja
 
     [Header("Posiciones registradas (read-only en runtime)")]
     public List<Vector3> playerSpawns = new List<Vector3>();
     public List<Vector3> enemySpawns = new List<Vector3>();
     public List<Vector3> ammoSpawns = new List<Vector3>();
     public List<Vector3> healSpawns = new List<Vector3>();
+    public List<Vector3> grenadeSpawns = new List<Vector3>(); // NUEVO
     public List<Vector3> doorPositions = new List<Vector3>();
     public List<Vector3> extractionPositions = new List<Vector3>();
 
@@ -41,6 +43,9 @@ public class LevelGenerator : MonoBehaviour
 
     // Gris RGB(100,100,100) en espacio 0..1
     private static readonly Color Gray = new Color(100f / 255f, 100f / 255f, 100f / 255f);
+
+    // NUEVO: Naranja RGB(255,128,0)
+    private static readonly Color Naranja = new Color(1f, 0.5f, 0f);
 
     private void Start()
     {
@@ -177,6 +182,11 @@ public class LevelGenerator : MonoBehaviour
         {
             SpawnTile(reviveZonePrefab, pos, false);
         }
+        else if (ColorMatch(color, Naranja))          // NUEVO - Naranja: spawn granadas
+        {
+            grenadeSpawns.Add(pos);
+            SpawnTile(grenadeSpawnMarker, pos, false);
+        }
     }
 
     // Instancia un prefab y lo escala al tamaño del pixel.
@@ -231,6 +241,7 @@ public class LevelGenerator : MonoBehaviour
         enemySpawns.Clear();
         ammoSpawns.Clear();
         healSpawns.Clear();
+        grenadeSpawns.Clear(); // NUEVO: Limpiamos la lista de granadas
         doorPositions.Clear();
         extractionPositions.Clear();
 

@@ -766,7 +766,7 @@ MonoBehaviour:
   reloadSpeed: 2
   droppedMagPrefabName: SM_Bullet_05 2
   prefabGranada: GranadaFisica
-  granadasActuales: 30
+  granadasActuales: 3
   fuerzaLanzamiento: 15
   cargadoresActuales: 3
   firePoint: {fileID: 6794958718673616309}

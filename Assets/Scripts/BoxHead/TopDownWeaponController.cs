@@ -48,6 +48,7 @@ public class TopDownWeaponController : MonoBehaviourPun
 
     public Camera mainCamera;
     private Vector3 puntoDeMiraExacto; // Guarda la coordenada exacta del mouse
+    private GameObject emptyTextObj; // Nuevo
 
     void Start()
     {
@@ -60,6 +61,7 @@ public class TopDownWeaponController : MonoBehaviourPun
         photonView.RPC("RPC_CrearTextoRecarga", RpcTarget.AllBuffered);
         photonView.RPC("RPC_CrearTextoDrop", RpcTarget.AllBuffered);
         photonView.RPC("RPC_CrearTextoGranadaJugador", RpcTarget.AllBuffered);
+        photonView.RPC("RPC_CrearTextoSinMunicion", RpcTarget.AllBuffered);
     }
 
     public void AplicarMejoras(float dañoExtra, float fireRateMejora, int extraMag, float reloadMejora)
@@ -95,7 +97,7 @@ public class TopDownWeaponController : MonoBehaviourPun
             }
         }
 
-        // SOLUCIÓN AL GIRO LOCO: Siempre apuntamos al mouse, incluso cocinando
+        // Siempre apuntamos al mouse, incluso cocinando
         if (!isMeleeAttacking)
         {
             ApuntarHaciaElMouse();
@@ -115,6 +117,13 @@ public class TopDownWeaponController : MonoBehaviourPun
             SoltarCargador();
         }
 
+        if (Input.GetMouseButtonDown(1) && Time.time >= nextMeleeTime)
+        {
+            nextMeleeTime = Time.time + meleeCooldown;
+            AtaqueMelee();
+        }
+
+        // EL BLOQUE CORREGIDO (Solo una vez)
         if (Input.GetMouseButton(0) && Time.time >= nextFireTime)
         {
             if (currentAmmo > 0)
@@ -126,12 +135,12 @@ public class TopDownWeaponController : MonoBehaviourPun
             {
                 StartCoroutine(Recargar());
             }
-        }
-
-        if (Input.GetMouseButtonDown(1) && Time.time >= nextMeleeTime)
-        {
-            nextMeleeTime = Time.time + meleeCooldown;
-            AtaqueMelee();
+            else
+            {
+                // No hay balas ni cargadores
+                nextFireTime = Time.time + fireRate; // Evita spamear y saturar la red
+                StartCoroutine(MostrarSinMunicion());
+            }
         }
     }
 
@@ -213,12 +222,38 @@ public class TopDownWeaponController : MonoBehaviourPun
     }
 
     // ... (Mantener RPC_CrearTextoRecarga, RPC_CrearTextoDrop, RPC_MostrarTextoRecarga, RPC_MostrarTextoDrop iguales) ...
+    private IEnumerator MostrarSinMunicion()
+    {
+        photonView.RPC("RPC_ToggleSinMunicion", RpcTarget.All, true);
+        yield return new WaitForSeconds(1f);
+        photonView.RPC("RPC_ToggleSinMunicion", RpcTarget.All, false);
+    }
+
+    [PunRPC]
+    private void RPC_CrearTextoSinMunicion()
+    {
+        emptyTextObj = new GameObject("TextoSinMunicion");
+        emptyTextObj.transform.SetParent(this.transform);
+        emptyTextObj.transform.localPosition = new Vector3(0f, 1.5f, 0f);
+        TextMesh tm = emptyTextObj.AddComponent<TextMesh>();
+        tm.text = "¡SIN MUNICIÓN!";
+        tm.characterSize = 0.15f; tm.fontSize = 40; tm.anchor = TextAnchor.MiddleCenter; tm.alignment = TextAlignment.Center; tm.color = Color.red;
+        emptyTextObj.SetActive(false);
+    }
+
+    [PunRPC]
+    private void RPC_ToggleSinMunicion(bool mostrar)
+    {
+        if (emptyTextObj != null) emptyTextObj.SetActive(mostrar);
+    }
+
+    // CORRECCIÓN PARA QUE EL COMPAÑERO LO VEA (Altura 1.5f en vez de 2.5f)
     [PunRPC]
     private void RPC_CrearTextoRecarga()
     {
         reloadTextObj = new GameObject("TextoRecarga");
         reloadTextObj.transform.SetParent(this.transform);
-        reloadTextObj.transform.localPosition = new Vector3(0f, 2.5f, 0f);
+        reloadTextObj.transform.localPosition = new Vector3(0f, 1.5f, 0f); // <-- ALTURA CORREGIDA
         TextMesh tm = reloadTextObj.AddComponent<TextMesh>();
         tm.text = "¡RECARGANDO!";
         tm.characterSize = 0.15f; tm.fontSize = 40; tm.anchor = TextAnchor.MiddleCenter; tm.alignment = TextAlignment.Center; tm.color = Color.yellow;
@@ -254,11 +289,11 @@ public class TopDownWeaponController : MonoBehaviourPun
 
     private void LateUpdate()
     {
-        // Actualización compartida de carteles que miran a la cámara
         if (mainCamera != null)
         {
             if (reloadTextObj != null && reloadTextObj.activeSelf) reloadTextObj.transform.rotation = mainCamera.transform.rotation;
             if (dropTextObj != null && dropTextObj.activeSelf) dropTextObj.transform.rotation = mainCamera.transform.rotation;
+            if (emptyTextObj != null && emptyTextObj.activeSelf) emptyTextObj.transform.rotation = mainCamera.transform.rotation; // Nuevo texto
 
             if (isCooking && grenadeTextObj != null)
             {

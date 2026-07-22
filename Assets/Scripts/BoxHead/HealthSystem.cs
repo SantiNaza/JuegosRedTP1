@@ -270,6 +270,7 @@ public class HealthSystem : MonoBehaviourPun
     private void RPC_Revive()
     {
         isDowned = false;
+        isDead = false; // ¡LA CORRECCIÓN CLAVE!
         currentHealth = maxHealth / 2;
 
         if (countdownTextObj != null) countdownTextObj.SetActive(false);

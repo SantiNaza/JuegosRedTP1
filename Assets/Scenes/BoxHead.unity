@@ -42459,6 +42459,52 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 842165973}
   m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &842519580
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 842519582}
+  - component: {fileID: 842519581}
+  m_Layer: 0
+  m_Name: GrenadePickupSpawner
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &842519581
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 842519580}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9fdf380c91b91404bbf3ddb54f27ecf5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  grenadePickupPrefab: {fileID: 9021979860543945138, guid: f4725ab88acebb14da972accf1678dc4, type: 3}
+  spawnHeightOffset: 0
+--- !u!4 &842519582
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 842519580}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 18.572748, y: 8.934333, z: -12.1279125}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 37
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &843806551
 GameObject:
   m_ObjectHideFlags: 0
@@ -57677,6 +57723,7 @@ MonoBehaviour:
   enemySpawnMarker: {fileID: 6956545197243695948, guid: e9e38bf60698a8c498b245bf56ed832b, type: 3}
   ammoSpawnMarker: {fileID: 0}
   healSpawnMarker: {fileID: 0}
+  grenadeSpawnMarker: {fileID: 0}
   playerSpawns:
   - {x: 2, y: 0.5, z: 2}
   - {x: 2, y: 0.5, z: 4}
@@ -57714,6 +57761,7 @@ MonoBehaviour:
   - {x: 23, y: 0.5, z: 13}
   - {x: 29, y: 0.5, z: 19}
   - {x: 30, y: 0.5, z: 19}
+  grenadeSpawns: []
   doorPositions:
   - {x: 3, y: 0.5, z: 16}
   - {x: 5, y: 0.5, z: 21}

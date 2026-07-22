@@ -85,6 +85,8 @@ MonoBehaviour:
   - RPC_CrearTextoGranadaJugador
   - RPC_EstadoCooking
   - RPC_SumarRescate
+  - RPC_CrearTextoSinMunicion
+  - RPC_ToggleSinMunicion
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 1

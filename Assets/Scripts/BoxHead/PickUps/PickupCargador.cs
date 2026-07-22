@@ -3,12 +3,21 @@ using Photon.Pun;
 
 public class PickupCargador : MonoBehaviourPun
 {
-    // Usamos esta bandera para evitar que dos jugadores lo agarren en el mismo frame exacto
     private bool yaRecogido = false;
+
+    // NUEVO: Agregamos el tiempo de gracia
+    private float delayRecogida = 1.5f;
+
+    void Update()
+    {
+        // Restamos el tiempo en cada frame
+        if (delayRecogida > 0) delayRecogida -= Time.deltaTime;
+    }
 
     void OnTriggerEnter(Collider other)
     {
-        if (yaRecogido) return;
+        // Si ya lo agarraron o si el tiempo de gracia no terminó, cortamos acá
+        if (yaRecogido || delayRecogida > 0) return;
 
         // Solo el jugador que toca el cargador ejecuta esta lógica en su máquina
         if (other.CompareTag("Player"))
