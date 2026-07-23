@@ -137,7 +137,11 @@ public class HUDManager : MonoBehaviour
             if (health == null) continue;                       // se desconectó
             if (currentIndexSlot >= slotsJugadores.Length) break;
 
-            // conteo para la derrota
+            // Conteo para la derrota.
+            // OJO: un jugador DERRIBADO (isDowned) sigue contando como "en juego",
+            // porque todavía lo pueden revivir durante el bleedOutTime.
+            // La muerte real es cuando HealthSystem.Die() hace PhotonNetwork.Destroy,
+            // y ahí el objeto directamente desaparece de esta lista.
             if (health.currentHealth > 0 || health.isDowned) jugadoresVivos++;
 
             PlayerUISlot slot = slotsJugadores[currentIndexSlot];
@@ -191,9 +195,11 @@ public class HUDManager : MonoBehaviour
         ChequearDerrota(jugadoresVivos);
     }
 
-    // Si en algún momento hubo jugadores vivos y ahora no queda ninguno -> derrota.
-    // Funciona tanto si los muertos quedan con currentHealth <= 0 como si el
-    // GameObject se destruye (en ese caso la lista queda vacía).
+    // Derrota = no queda NINGÚN jugador en juego.
+    // "En juego" incluye a los derribados, que todavía pueden ser revividos.
+    // Cuando a un derribado se le acaba el desangrado, HealthSystem.Die() suelta
+    // las chapas y destruye el GameObject, así que deja de aparecer en la lista.
+    // Recién cuando la lista queda sin nadie en juego se muestra la derrota.
     void ChequearDerrota(int jugadoresVivos)
     {
         if (derrotaMostrada) return;
@@ -292,7 +298,39 @@ public class HUDManager : MonoBehaviour
         textoNotificaciones.gameObject.SetActive(false);
     }
 
+    // Cuenta los jugadores que siguen EN JUEGO en este momento.
+    // "En juego" = vivo, o derribado (todavía revivible).
+    // Un jugador realmente muerto ya no existe: Die() hace PhotonNetwork.Destroy.
+    public int ContarJugadoresEnJuego()
+    {
+        int n = 0;
+        HealthSystem[] todos = FindObjectsOfType<HealthSystem>();
+        foreach (var h in todos)
+        {
+            if (h == null || !h.isPlayer) continue;
+            if (h.currentHealth > 0 || h.isDowned) n++;
+        }
+        return n;
+    }
+
+    // GUARDA: aunque otro script la llame, la derrota NO se muestra
+    // mientras quede al menos un jugador en juego.
     public void MostrarDerrota()
+    {
+        if (derrotaMostrada) return;
+
+        int enJuego = ContarJugadoresEnJuego();
+        if (enJuego > 0)
+        {
+            Debug.Log($"[HUD] Se pidió la derrota pero todavía quedan {enJuego} jugador(es) en juego. Ignorado.");
+            return;
+        }
+
+        ForzarDerrota();
+    }
+
+    // Muestra la derrota sin chequear nada. Usar solo si de verdad hace falta.
+    public void ForzarDerrota()
     {
         if (derrotaMostrada) return;   // que no se dispare dos veces
         derrotaMostrada = true;
