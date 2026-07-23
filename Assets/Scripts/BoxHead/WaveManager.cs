@@ -12,14 +12,18 @@ public class WaveManager : MonoBehaviourPun
 {
     private List<Vector3> enemySpawnPoints;
 
-    [Header("Arrastra los Prefabs de los Zombies aquí")]
+    [Header("ORDEN OBLIGATORIO: 0=Normal, 1=Fast, 2=Tank")]
     public GameObject[] zombiePrefabs;
 
     private int currentWave = 1;
     private int zombiesAlive = 0;
-    private float timeBetweenSpawns = 1f;
 
-    // Volvemos a tu variable estática original, simple y directa.
+    // Variables de LiveOps
+    private float timeBetweenSpawns = 1f;
+    private int pesoNormal = 70;
+    private int pesoFast = 20;
+    private int pesoTank = 10;
+
     public static bool fuegoAmigoActivado = false;
 
     private bool partidaIniciada = false;
@@ -27,8 +31,6 @@ public class WaveManager : MonoBehaviourPun
 
     async void Awake()
     {
-        // A PEDIDO TUYO: TODOS los jugadores (sin importar si son Host o Clientes) 
-        // se conectan a la nube de Unity por su cuenta en el instante 0.
         if (UnityServices.State == ServicesInitializationState.Uninitialized)
         {
             await UnityServices.InitializeAsync();
@@ -37,7 +39,6 @@ public class WaveManager : MonoBehaviourPun
 
         RemoteConfigService.Instance.FetchCompleted += AplicarConfiguracionRemota;
 
-        // Cada jugador descarga su propia copia de las reglas antes de que empiece la acción
         if (UnityServices.State == ServicesInitializationState.Initialized)
         {
             RemoteConfigService.Instance.FetchConfigs(new userAttributes(), new appAttributes());
@@ -83,7 +84,6 @@ public class WaveManager : MonoBehaviourPun
 
     private void ComprobarYArrancar()
     {
-        // Solo el Host instancia los enemigos
         if (PhotonNetwork.IsMasterClient)
         {
             CargarSpawnPointsDelMapa();
@@ -102,21 +102,29 @@ public class WaveManager : MonoBehaviourPun
 
     private void AplicarConfiguracionRemota(ConfigResponse response)
     {
-        // CADA JUGADOR aplica los valores a sus variables locales. 
-        // Como todos leen de la misma nube, todos van a tener exactamente la misma configuración.
-        timeBetweenSpawns = RemoteConfigService.Instance.appConfig.GetFloat("SpawnRate", 1.0f);
         fuegoAmigoActivado = RemoteConfigService.Instance.appConfig.GetBool("fuegoAmigoActivado", false);
+        timeBetweenSpawns = RemoteConfigService.Instance.appConfig.GetFloat("SpawnRate", 1.0f);
 
-        Debug.Log("Live-Ops Local | Spawns: " + timeBetweenSpawns + "s | Fuego Amigo: " + fuegoAmigoActivado);
+        // NUEVO: Leemos los pesos desde la nube (si no existen, usan los valores por defecto que ponemos acá)
+        pesoNormal = RemoteConfigService.Instance.appConfig.GetInt("pesoNormal", 70);
+        pesoFast = RemoteConfigService.Instance.appConfig.GetInt("pesoFast", 20);
+        pesoTank = RemoteConfigService.Instance.appConfig.GetInt("pesoTank", 10);
+
+        Debug.Log($"LiveOps | Rate: {timeBetweenSpawns}s | Pesos: N:{pesoNormal} F:{pesoFast} T:{pesoTank}");
     }
 
     IEnumerator StartWave()
     {
+        // Más zombis a medida que avanzan las oleadas
         int zombiesToSpawn = currentWave * 5;
 
         for (int i = 0; i < zombiesToSpawn; i++)
         {
-            if (zombiePrefabs == null || zombiePrefabs.Length == 0) break;
+            if (zombiePrefabs == null || zombiePrefabs.Length < 3)
+            {
+                Debug.LogError("Faltan asignar los 3 tipos de zombis en el Inspector.");
+                break;
+            }
             if (enemySpawnPoints == null || enemySpawnPoints.Count == 0) break;
 
             Vector3 spawnPos = enemySpawnPoints[Random.Range(0, enemySpawnPoints.Count)];
@@ -124,7 +132,26 @@ public class WaveManager : MonoBehaviourPun
             if (NavMesh.SamplePosition(spawnPos, out NavMeshHit hit, 5f, NavMesh.AllAreas))
             {
                 spawnPos = hit.position;
-                GameObject zombieElegido = zombiePrefabs[Random.Range(0, zombiePrefabs.Length)];
+
+                // --- EL SISTEMA DE PESOS (PROBABILIDADES) ---
+                GameObject zombieElegido = null;
+                int totalWeight = pesoNormal + pesoFast + pesoTank;
+                int randomValue = Random.Range(0, totalWeight);
+
+                if (randomValue < pesoNormal)
+                {
+                    zombieElegido = zombiePrefabs[0]; // Element 0: Normal
+                }
+                else if (randomValue < pesoNormal + pesoFast)
+                {
+                    zombieElegido = zombiePrefabs[1]; // Element 1: Fast
+                }
+                else
+                {
+                    zombieElegido = zombiePrefabs[2]; // Element 2: Tank
+                }
+                // ---------------------------------------------
+
                 PhotonNetwork.InstantiateRoomObject(zombieElegido.name, spawnPos, Quaternion.identity);
                 zombiesAlive++;
             }
@@ -147,13 +174,11 @@ public class WaveManager : MonoBehaviourPun
         yield return new WaitForSeconds(3f);
         currentWave++;
 
-        // Hacemos que todos los jugadores chequeen si cambiaste algo en LiveOps entre rondas
         if (UnityServices.State == ServicesInitializationState.Initialized)
         {
             RemoteConfigService.Instance.FetchConfigs(new userAttributes(), new appAttributes());
         }
 
-        // Solo el Host lanza la oleada
         if (PhotonNetwork.IsMasterClient)
         {
             StartCoroutine(StartWave());

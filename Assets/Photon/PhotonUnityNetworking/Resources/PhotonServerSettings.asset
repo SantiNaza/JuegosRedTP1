@@ -88,6 +88,7 @@ MonoBehaviour:
   - RPC_CrearTextoSinMunicion
   - RPC_ToggleSinMunicion
   - RPC_SetAnim
+  - RPC_SincronizarLiveOps
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 1

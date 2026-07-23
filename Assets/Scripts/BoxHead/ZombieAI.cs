@@ -2,6 +2,8 @@ using UnityEngine;
 using UnityEngine.AI;
 using Photon.Pun;
 using System.Collections;
+using Unity.Services.Core;
+using Unity.Services.RemoteConfig;
 
 [RequireComponent(typeof(NavMeshAgent))]
 public class ZombieAI : MonoBehaviourPun
@@ -9,29 +11,68 @@ public class ZombieAI : MonoBehaviourPun
     private NavMeshAgent agent;
     private Transform closestPlayer;
 
+    [Header("Configuración LiveOps")]
+    [Tooltip("Escribí 'Normal', 'Fast' o 'Tank' para que busque sus variables en la nube")]
+    public string prefijoLiveOps = "Normal";
+
     [Header("Configuración de Ataque")]
     public float attackRange = 1.5f;
-    public float attackDamage = 10f; // Cuánto daño hace por golpe
-    public float attackCooldown = 1f; // Espera 1 segundo entre cada golpe
+    public float attackDamage = 10f; // Se sobreescribirá con LiveOps
+    public float attackCooldown = 1f;
     private float nextAttackTime = 0f;
 
     void Start()
     {
         agent = GetComponent<NavMeshAgent>();
 
+        // 1. TODOS los clientes actualizan los stats visuales y de vida del zombi
+        AplicarAtributosDeLiveOps();
+
+        // 2. Lógica exclusiva de movimiento (Solo Host)
         if (!PhotonNetwork.IsMasterClient)
         {
-            agent.enabled = false;
+            if (agent != null) agent.enabled = false;
             return;
         }
 
-        // El agente maneja el movimiento: el Rigidbody NO debe pelear con él
         Rigidbody rb = GetComponent<Rigidbody>();
         if (rb != null) rb.isKinematic = true;
 
-        // Plantamos el agente sobre el NavMesh
         if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 5f, NavMesh.AllAreas))
             agent.Warp(hit.position);
+    }
+
+    private void AplicarAtributosDeLiveOps()
+    {
+        // Si no hay internet o servicios, se queda con los valores fijos de tu Inspector
+        if (UnityServices.State != ServicesInitializationState.Initialized) return;
+
+        // Armamos el nombre de la llave combinando el prefijo (Ej: "Normal" + "_HP" = "Normal_HP")
+        float liveHp = RemoteConfigService.Instance.appConfig.GetFloat(prefijoLiveOps + "_HP", GetComponent<HealthSystem>().maxHealth);
+        float liveDamage = RemoteConfigService.Instance.appConfig.GetFloat(prefijoLiveOps + "_Damage", attackDamage);
+
+        // Buscamos la velocidad. Si falla, usa la que tenga el NavMeshAgent actualmente
+        float currentSpeed = agent != null ? agent.speed : 1.5f;
+        float liveSpeed = RemoteConfigService.Instance.appConfig.GetFloat(prefijoLiveOps + "_Speed", currentSpeed);
+
+        // --- APLICAMOS LOS CAMBIOS ---
+
+        // 1. Daño
+        attackDamage = liveDamage;
+
+        // 2. Vida
+        HealthSystem healthSystem = GetComponent<HealthSystem>();
+        if (healthSystem != null)
+        {
+            healthSystem.maxHealth = liveHp;
+            healthSystem.currentHealth = liveHp;
+        }
+
+        // 3. Velocidad de Movimiento (Solo importa para el Master Client que lo mueve)
+        if (agent != null && PhotonNetwork.IsMasterClient)
+        {
+            agent.speed = liveSpeed;
+        }
     }
 
     void Update()
@@ -43,17 +84,14 @@ public class ZombieAI : MonoBehaviourPun
         if (closestPlayer != null)
         {
             float distance = Vector3.Distance(transform.position, closestPlayer.position);
-            
+
             if (distance <= attackRange)
             {
-                // El zombie llegó al jugador
                 agent.isStopped = true;
-                
-                // Hacemos que mire al jugador mientras lo ataca
+
                 Vector3 lookPos = new Vector3(closestPlayer.position.x, transform.position.y, closestPlayer.position.z);
                 transform.LookAt(lookPos);
 
-                // Atacamos si el tiempo de enfriamiento (cooldown) ya pasó
                 if (Time.time >= nextAttackTime)
                 {
                     nextAttackTime = Time.time + attackCooldown;
@@ -62,7 +100,6 @@ public class ZombieAI : MonoBehaviourPun
             }
             else
             {
-                // El zombie sigue persiguiendo
                 agent.isStopped = false;
                 agent.SetDestination(closestPlayer.position);
             }
@@ -71,12 +108,9 @@ public class ZombieAI : MonoBehaviourPun
 
     private void AtacarJugador(Transform playerTransform)
     {
-        // Buscamos el componente de vida del jugador
         HealthSystem playerHealth = playerTransform.GetComponent<HealthSystem>();
-        
         if (playerHealth != null)
         {
-            // Le enviamos el daño a través de la red
             playerHealth.photonView.RPC("RPC_TakeDamage", RpcTarget.All, attackDamage, 0);
         }
     }
@@ -98,15 +132,10 @@ public class ZombieAI : MonoBehaviourPun
         }
     }
 
-    // ==========================================
-    // SISTEMA DE EMPUJE (KNOCKBACK)
-    // ==========================================
     [PunRPC]
     public void RPC_ApplyKnockback(Vector3 knockbackForce)
     {
-        // Solo el Master Client controla los movimientos físicos de los zombies
         if (!PhotonNetwork.IsMasterClient) return;
-        
         StartCoroutine(KnockbackRoutine(knockbackForce));
     }
 
@@ -115,12 +144,10 @@ public class ZombieAI : MonoBehaviourPun
         float duration = 0.2f;
         float time = 0;
 
-        // Pausamos su IA momentáneamente para que no se resista al empuje
         if (agent.isOnNavMesh) agent.isStopped = true;
 
         while (time < duration)
         {
-            // Usamos agent.Move() para que el NavMesh respete las paredes y no lo empujemos a través de ellas
             if (agent.isOnNavMesh)
             {
                 agent.Move(force * (Time.deltaTime / duration));
@@ -129,7 +156,6 @@ public class ZombieAI : MonoBehaviourPun
             yield return null;
         }
 
-        // Reanudamos la persecución
         if (agent.isOnNavMesh) agent.isStopped = false;
     }
 }
