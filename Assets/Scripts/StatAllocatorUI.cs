@@ -8,6 +8,18 @@ public class StatAllocatorUI : MonoBehaviour
     [Header("Dónde se construye (un panel vacío del Canvas)")]
     [SerializeField] private RectTransform container;
 
+    [Header("Sprites del kit (opcionales, arrastralos desde Assets/UI)")]
+    [SerializeField] private Sprite btnNormal;
+    [SerializeField] private Sprite btnHighlighted;
+    [SerializeField] private Sprite btnPressed;
+    [SerializeField] private Sprite btnDisabled;
+
+    // ---------- Paleta del kit ----------
+    private static readonly Color AMBER = new Color32(0xF5, 0xA8, 0x28, 0xFF); // ámbar principal
+    private static readonly Color CREAM = new Color32(0xEB, 0xE1, 0xCD, 0xFF); // texto normal
+    private const string HEX_DOT_FULL = "#F5A828";                           // punto lleno
+    private const string HEX_DOT_EMPTY = "#6E5A2E";                           // punto vacío
+
     private TMP_Text pointsLabel;
     private readonly Dictionary<StatType, TMP_Text> levelLabels = new Dictionary<StatType, TMP_Text>();
     private readonly Dictionary<StatType, Button> plusButtons = new Dictionary<StatType, Button>();
@@ -32,7 +44,7 @@ public class StatAllocatorUI : MonoBehaviour
         layout.padding = new RectOffset(20, 20, 20, 20);
 
         // Encabezado de puntos restantes
-        pointsLabel = MakeText(container, "", 28, FontStyles.Bold);
+        pointsLabel = MakeText(container, "", 28, FontStyles.Bold, AMBER);
         pointsLabel.alignment = TextAlignmentOptions.Center;
 
         // Una fila por stat
@@ -55,7 +67,7 @@ public class StatAllocatorUI : MonoBehaviour
         le.minHeight = 25;
 
         // nombre del stat
-        var name = MakeText(row.transform, PlayerStatsConfig.DisplayName(stat), 18, FontStyles.Normal);
+        var name = MakeText(row.transform, PlayerStatsConfig.DisplayName(stat), 18, FontStyles.Normal, CREAM);
         name.alignment = TextAlignmentOptions.MidlineLeft;
         var nameLE = name.gameObject.AddComponent<LayoutElement>();
         nameLE.preferredWidth = 200;
@@ -65,7 +77,7 @@ public class StatAllocatorUI : MonoBehaviour
         minusButtons[stat] = minus;
 
         // nivel (ej "●●○")
-        var lvl = MakeText(row.transform, "", 18, FontStyles.Bold);
+        var lvl = MakeText(row.transform, "", 18, FontStyles.Bold, CREAM);
         lvl.alignment = TextAlignmentOptions.Center;
         var lvlLE = lvl.gameObject.AddComponent<LayoutElement>();
         lvlLE.preferredWidth = 120;
@@ -99,9 +111,11 @@ public class StatAllocatorUI : MonoBehaviour
         foreach (StatType s in System.Enum.GetValues(typeof(StatType)))
         {
             int lvl = PlayerStatsConfig.GetLevel(s);
+            int empty = PlayerStatsConfig.MaxPerStat - lvl;
 
-            // puntitos: llenos = nivel, vacíos = lo que falta hasta el máximo
-            string dots = new string('●', lvl) + new string('○', PlayerStatsConfig.MaxPerStat - lvl);
+            // puntitos: llenos en ámbar, vacíos en ámbar apagado (rich text de TMP)
+            string dots = $"<color={HEX_DOT_FULL}>{new string('●', lvl)}</color>" +
+                          $"<color={HEX_DOT_EMPTY}>{new string('○', empty)}</color>";
             levelLabels[s].text = dots;
 
             minusButtons[s].interactable = lvl > 0;
@@ -110,7 +124,7 @@ public class StatAllocatorUI : MonoBehaviour
     }
 
     // ---------- helpers de creación ----------
-    TMP_Text MakeText(Transform parent, string text, float size, FontStyles style)
+    TMP_Text MakeText(Transform parent, string text, float size, FontStyles style, Color? color = null)
     {
         GameObject go = new GameObject("Text", typeof(RectTransform));
         go.transform.SetParent(parent, false);
@@ -118,7 +132,7 @@ public class StatAllocatorUI : MonoBehaviour
         t.text = text;
         t.fontSize = size;
         t.fontStyle = style;
-        t.color = Color.white;
+        t.color = color ?? CREAM;
         return t;
     }
 
@@ -128,16 +142,39 @@ public class StatAllocatorUI : MonoBehaviour
         go.transform.SetParent(parent, false);
 
         var img = go.AddComponent<Image>();
-        img.color = new Color(0.25f, 0.25f, 0.3f, 1f);
 
         var btn = go.AddComponent<Button>();
         btn.onClick.AddListener(onClick);
+
+        // CLAVE: al crear el Button por código, targetGraphic queda en null
+        // y el Sprite Swap no funciona aunque asignes los sprites.
+        btn.targetGraphic = img;
+
+        if (btnNormal != null)
+        {
+            img.sprite = btnNormal;
+            img.type = Image.Type.Sliced;
+            img.color = Color.white;   // blanco = no tiñe el sprite
+
+            btn.transition = Selectable.Transition.SpriteSwap;
+            var ss = btn.spriteState;
+            ss.highlightedSprite = btnHighlighted;
+            ss.pressedSprite = btnPressed;
+            ss.selectedSprite = btnHighlighted;
+            ss.disabledSprite = btnDisabled;
+            btn.spriteState = ss;
+        }
+        else
+        {
+            // fallback si todavía no asignaste los sprites en el Inspector
+            img.color = new Color(0.25f, 0.25f, 0.3f, 1f);
+        }
 
         var le = go.AddComponent<LayoutElement>();
         le.preferredWidth = 220;
         le.preferredHeight = 20;
 
-        var txt = MakeText(go.transform, label, 16, FontStyles.Bold);
+        var txt = MakeText(go.transform, label, 16, FontStyles.Bold, AMBER);
         txt.alignment = TextAlignmentOptions.Center;
         var txtRT = (RectTransform)txt.transform;
         txtRT.anchorMin = Vector2.zero;
