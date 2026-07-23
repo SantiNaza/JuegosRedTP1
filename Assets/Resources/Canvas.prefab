@@ -220,8 +220,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
-  m_Type: 1
+  m_Sprite: {fileID: 21300000, guid: b0ed0a13c7a142645be25e8399c3c9fb, type: 3}
+  m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -1014,8 +1014,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4281479730
-  m_fontColor: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
+    rgba: 4280854773
+  m_fontColor: {r: 0.9607843, g: 0.65882355, b: 0.15686275, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -2387,7 +2387,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: -279, y: 156}
-  m_SizeDelta: {x: 200, y: 50}
+  m_SizeDelta: {x: 238.7842, y: 50}
   m_Pivot: {x: 0, y: 1}
 --- !u!222 &7607991084783682101
 CanvasRenderer:
@@ -2961,7 +2961,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: -279, y: 156}
-  m_SizeDelta: {x: 200, y: 50}
+  m_SizeDelta: {x: 238.7842, y: 50}
   m_Pivot: {x: 0, y: 1}
 --- !u!222 &7607991085341228597
 CanvasRenderer:
@@ -3096,7 +3096,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: -279, y: 156}
-  m_SizeDelta: {x: 200, y: 50}
+  m_SizeDelta: {x: 238.7842, y: 50}
   m_Pivot: {x: 0, y: 1}
 --- !u!222 &7607991085486173923
 CanvasRenderer:
@@ -3231,7 +3231,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: -279, y: 156}
-  m_SizeDelta: {x: 200, y: 50}
+  m_SizeDelta: {x: 238.7842, y: 50}
   m_Pivot: {x: 0, y: 1}
 --- !u!222 &7607991085634747837
 CanvasRenderer:
@@ -3493,7 +3493,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: -279, y: 156}
-  m_SizeDelta: {x: 200, y: 50}
+  m_SizeDelta: {x: 238.7842, y: 50}
   m_Pivot: {x: 0, y: 1}
 --- !u!222 &7607991085780607259
 CanvasRenderer:
@@ -3853,6 +3853,9 @@ MonoBehaviour:
   textoMigracion: {fileID: 3741236937212572466}
   textoNotificaciones: {fileID: 5683829076041929795}
   panelDerrota: {fileID: 3763916797818874845}
+  tenirBarraConColorJugador: 1
+  umbralVidaCritica: 0.25
+  intervaloRefrescoJugadores: 0.5
 --- !u!1 &7607991085920114913
 GameObject:
   m_ObjectHideFlags: 0

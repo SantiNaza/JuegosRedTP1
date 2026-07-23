@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using TMPro;
 using Photon.Pun;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine.SceneManagement; // Para poder cargar el menú
 
 public class HUDManager : MonoBehaviour
@@ -31,9 +32,36 @@ public class HUDManager : MonoBehaviour
     [Header("UI Notificaciones")]
     public TextMeshProUGUI textoNotificaciones;
 
- 
     [Header("UI Derrota")]
     public GameObject panelDerrota;
+
+    // ---------- Paleta del kit ----------
+    public static readonly Color AMBER = new Color32(0xF5, 0xA8, 0x28, 0xFF); // ámbar principal
+    public static readonly Color CREAM = new Color32(0xEB, 0xE1, 0xCD, 0xFF); // texto normal
+    public static readonly Color DANGER = new Color32(0xD6, 0x3A, 0x3A, 0xFF); // vida crítica
+
+    [Header("Colores del HUD")]
+    [Tooltip("Si está activo, la barra de vida se tiñe con el color del jugador.")]
+    [SerializeField] private bool tenirBarraConColorJugador = true;
+    [Tooltip("Debajo de este porcentaje la barra parpadea en rojo.")]
+    [Range(0f, 0.5f)][SerializeField] private float umbralVidaCritica = 0.25f;
+
+    [Header("Rendimiento")]
+    [Tooltip("Cada cuántos segundos se vuelve a buscar jugadores en la escena.")]
+    [SerializeField] private float intervaloRefrescoJugadores = 0.5f;
+
+    [Header("Detección de Derrota")]
+    [Tooltip("Segundos de gracia al iniciar la escena antes de chequear la derrota. " +
+             "Evita falsos positivos mientras los jugadores todavía están spawneando.")]
+    [SerializeField] private float retrasoInicialDerrota = 4f;
+
+    // cache para no llamar a FindObjectsOfType todos los frames
+    private readonly List<HealthSystem> jugadoresCache = new List<HealthSystem>();
+    private float proximoRefresco;
+
+    // estado de la derrota
+    private bool huboJugadores;      // ya se detectó al menos un jugador vivo alguna vez
+    private bool derrotaMostrada;    // para no dispararla más de una vez
 
     void Awake()
     {
@@ -52,57 +80,104 @@ public class HUDManager : MonoBehaviour
         if (textoExtraccion != null) textoExtraccion.gameObject.SetActive(false);
         if (panelFondoMigracion != null) panelFondoMigracion.SetActive(false);
         if (textoNotificaciones != null) textoNotificaciones.gameObject.SetActive(false);
-        
+
         // Apagamos el panel de derrota al empezar
         if (panelDerrota != null) panelDerrota.SetActive(false);
+
+        AplicarPaletaInicial();
+        RefrescarListaJugadores();
+    }
+
+    // Pinta de una sola vez los textos fijos con la paleta del kit
+    void AplicarPaletaInicial()
+    {
+        if (textoExtraccion != null) textoExtraccion.color = AMBER;
+        if (textoMigracion != null) textoMigracion.color = AMBER;
+        if (textoNotificaciones != null) textoNotificaciones.color = AMBER;
+
+        foreach (var slot in slotsJugadores)
+        {
+            if (slot.textoCargadores != null) slot.textoCargadores.color = CREAM;
+        }
+    }
+
+    // Busca los jugadores y los ORDENA por ActorNumber.
+    // Sin esto, FindObjectsOfType devuelve un orden arbitrario y los jugadores
+    // saltan de slot entre frame y frame.
+    void RefrescarListaJugadores()
+    {
+        jugadoresCache.Clear();
+
+        HealthSystem[] todos = FindObjectsOfType<HealthSystem>();
+        foreach (var h in todos)
+        {
+            if (h != null && h.isPlayer && h.photonView != null && h.photonView.Owner != null)
+                jugadoresCache.Add(h);
+        }
+
+        jugadoresCache.Sort((a, b) =>
+            a.photonView.Owner.ActorNumber.CompareTo(b.photonView.Owner.ActorNumber));
     }
 
     void Update()
     {
-        HealthSystem[] todosLosPersonajes = FindObjectsOfType<HealthSystem>();
-        int currentIndexSlot = 0;
-
-        for (int i = 0; i < todosLosPersonajes.Length; i++)
+        // refresco espaciado en vez de cada frame
+        if (Time.time >= proximoRefresco)
         {
-            HealthSystem health = todosLosPersonajes[i];
+            proximoRefresco = Time.time + intervaloRefrescoJugadores;
+            RefrescarListaJugadores();
+        }
 
-            if (health.isPlayer && health.photonView != null)
+        int currentIndexSlot = 0;
+        int jugadoresVivos = 0;
+
+        for (int i = 0; i < jugadoresCache.Count; i++)
+        {
+            HealthSystem health = jugadoresCache[i];
+            if (health == null) continue;                       // se desconectó
+            if (currentIndexSlot >= slotsJugadores.Length) break;
+
+            // conteo para la derrota
+            if (health.currentHealth > 0 || health.isDowned) jugadoresVivos++;
+
+            PlayerUISlot slot = slotsJugadores[currentIndexSlot];
+
+            if (slot.contenedorSlot != null)
+                slot.contenedorSlot.SetActive(true);
+
+            // color elegido por el jugador en SelectCharacter
+            Color colorJugador = CREAM;
+            if (health.photonView.Owner.CustomProperties.TryGetValue("color", out object indexColor))
             {
-                if (currentIndexSlot >= slotsJugadores.Length) break;
-
-                PlayerUISlot slot = slotsJugadores[currentIndexSlot];
-
-                if (slot.contenedorSlot != null)
-                    slot.contenedorSlot.SetActive(true);
-
-                if (slot.textoNombre != null)
-                {
-                    slot.textoNombre.text = health.photonView.Owner.NickName;
-
-                    if (health.photonView.Owner.CustomProperties.TryGetValue("color", out object indexColor))
-                    {
-                        int cIndex = (int)indexColor;
-                        if (cIndex >= 0 && cIndex < GameColors.Palette.Length)
-                        {
-                            slot.textoNombre.color = GameColors.Palette[cIndex];
-                        }
-                    }
-                }
-
-                if (slot.barraVida != null)
-                {
-                    slot.barraVida.maxValue = health.maxHealth;
-                    slot.barraVida.value = health.currentHealth;
-                }
-
-                TopDownWeaponController weapon = health.GetComponent<TopDownWeaponController>();
-                if (slot.textoCargadores != null && weapon != null)
-                {
-                    slot.textoCargadores.text = "Cargadores: " + weapon.cargadoresActuales;
-                }
-
-                currentIndexSlot++;
+                int cIndex = (int)indexColor;
+                if (cIndex >= 0 && cIndex < GameColors.Palette.Length)
+                    colorJugador = GameColors.Palette[cIndex];
             }
+
+            if (slot.textoNombre != null)
+            {
+                slot.textoNombre.text = health.photonView.Owner.NickName;
+                slot.textoNombre.color = colorJugador;
+            }
+
+            if (slot.barraVida != null)
+            {
+                slot.barraVida.maxValue = health.maxHealth;
+                slot.barraVida.value = health.currentHealth;
+
+                PintarBarra(slot.barraVida, colorJugador,
+                            health.maxHealth > 0 ? (float)health.currentHealth / health.maxHealth : 0f);
+            }
+
+            TopDownWeaponController weapon = health.GetComponent<TopDownWeaponController>();
+            if (slot.textoCargadores != null && weapon != null)
+            {
+                // ámbar para el número, crema para la etiqueta
+                slot.textoCargadores.text =
+                    $"<color=#EBE1CD>CARGADORES</color>  <color=#F5A828><b>{weapon.cargadoresActuales}</b></color>";
+            }
+
+            currentIndexSlot++;
         }
 
         for (int i = currentIndexSlot; i < slotsJugadores.Length; i++)
@@ -111,6 +186,52 @@ public class HUDManager : MonoBehaviour
             {
                 slotsJugadores[i].contenedorSlot.SetActive(false);
             }
+        }
+
+        ChequearDerrota(jugadoresVivos);
+    }
+
+    // Si en algún momento hubo jugadores vivos y ahora no queda ninguno -> derrota.
+    // Funciona tanto si los muertos quedan con currentHealth <= 0 como si el
+    // GameObject se destruye (en ese caso la lista queda vacía).
+    void ChequearDerrota(int jugadoresVivos)
+    {
+        if (derrotaMostrada) return;
+
+        // margen de gracia al cargar la escena: los players todavía están spawneando
+        // y algunos scripts setean currentHealth recién en Start().
+        if (Time.timeSinceLevelLoad < retrasoInicialDerrota) return;
+
+        // recién empezamos a vigilar una vez que vimos al menos un jugador vivo
+        if (jugadoresVivos > 0)
+        {
+            huboJugadores = true;
+            return;
+        }
+
+        if (huboJugadores)
+        {
+            MostrarDerrota();
+        }
+    }
+
+    // Tiñe el Fill del Slider y avisa cuando la vida está crítica
+    void PintarBarra(Slider barra, Color colorJugador, float porcentaje)
+    {
+        if (barra.fillRect == null) return;
+
+        Image fill = barra.fillRect.GetComponent<Image>();
+        if (fill == null) return;
+
+        if (porcentaje <= umbralVidaCritica)
+        {
+            // parpadeo suave en rojo
+            float t = Mathf.PingPong(Time.time * 3f, 1f);
+            fill.color = Color.Lerp(DANGER, Color.white, t * 0.35f);
+        }
+        else
+        {
+            fill.color = tenirBarraConColorJugador ? colorJugador : AMBER;
         }
     }
 
@@ -124,6 +245,12 @@ public class HUDManager : MonoBehaviour
         }
     }
 
+    // Versión corta: usa el ámbar del kit sin tener que pasar color
+    public void MostrarTextoExtraccion(string mensaje)
+    {
+        MostrarTextoExtraccion(mensaje, AMBER);
+    }
+
     public void OcultarTextoExtraccion()
     {
         if (textoExtraccion != null && textoExtraccion.gameObject.activeSelf)
@@ -135,7 +262,11 @@ public class HUDManager : MonoBehaviour
     public void MostrarMigracion(string mensaje)
     {
         if (panelFondoMigracion != null) panelFondoMigracion.SetActive(true);
-        if (textoMigracion != null) textoMigracion.text = mensaje;
+        if (textoMigracion != null)
+        {
+            textoMigracion.text = mensaje;
+            textoMigracion.color = AMBER;
+        }
     }
 
     public void OcultarMigracion()
@@ -147,7 +278,7 @@ public class HUDManager : MonoBehaviour
     {
         if (textoNotificaciones != null)
         {
-            StopCoroutine("RutinaNotificacion"); 
+            StopCoroutine("RutinaNotificacion");
             StartCoroutine(RutinaNotificacion(mensaje, tiempo));
         }
     }
@@ -155,22 +286,27 @@ public class HUDManager : MonoBehaviour
     private IEnumerator RutinaNotificacion(string mensaje, float tiempo)
     {
         textoNotificaciones.gameObject.SetActive(true);
+        textoNotificaciones.color = AMBER;
         textoNotificaciones.text = mensaje;
         yield return new WaitForSeconds(tiempo);
         textoNotificaciones.gameObject.SetActive(false);
     }
 
-    
     public void MostrarDerrota()
     {
+        if (derrotaMostrada) return;   // que no se dispare dos veces
+        derrotaMostrada = true;
+
         if (panelDerrota != null) panelDerrota.SetActive(true);
 
-        
+        // apagamos el resto de la UI central para que no se superponga
+        OcultarTextoExtraccion();
+        OcultarMigracion();
+
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
     }
 
-    
     public void VolverAlMenuPrincipal()
     {
         StartCoroutine(RutinaSalir());
@@ -178,17 +314,16 @@ public class HUDManager : MonoBehaviour
 
     private IEnumerator RutinaSalir()
     {
-
-        Time.timeScale = 1f; 
+        Time.timeScale = 1f;
 
         if (PhotonNetwork.InRoom)
         {
             PhotonNetwork.LeaveRoom();
             // Esperamos a que Photon nos desconecte de la sala antes de cargar la escena
-            while (PhotonNetwork.InRoom) yield return null; 
+            while (PhotonNetwork.InRoom) yield return null;
         }
 
         // Carga la escena del menú principal
-        SceneManager.LoadScene("Menu"); 
+        SceneManager.LoadScene("Menu");
     }
 }
