@@ -1,42 +1,13 @@
 using UnityEngine;
 using Photon.Pun;
-using Photon.Realtime;
 
+// NOTA: el color ya NO se aplica al modelo del personaje.
+// Los personajes son unicos, asi que no hace falta teñirlos.
+// El color se usa SOLO para los nombres (HUDManager y MatchManager lo leen
+// directo de la CustomProperty "color"). Este componente quedo inerte a
+// proposito para no romper la referencia del prefab; podes quitarlo si querés.
 [RequireComponent(typeof(PhotonView))]
 public class PlayerColor : MonoBehaviourPun
 {
-    [Header("Renderer")]
-    [SerializeField] private Renderer playerRenderer;
-
-    private void Start()
-    {
-        if (playerRenderer == null)
-            playerRenderer = GetComponentInChildren<Renderer>();
-
-        // LOG TEMPORAL
-        if (photonView.Owner.CustomProperties.TryGetValue("color", out object dbg))
-            Debug.Log($"[PlayerColor] Actor {photonView.Owner.ActorNumber} color guardado: {(int)dbg}");
-        else
-            Debug.Log($"[PlayerColor] Actor {photonView.Owner.ActorNumber} SIN property color");
-
-        int index = GetColorIndex();
-        playerRenderer.material.color = GameColors.Palette[index];
-    }
-
-    private int GetColorIndex()
-    {
-        // 1) Color elegido en el selector (CustomProperty "color")
-        if (photonView.Owner.CustomProperties.TryGetValue("color", out object c))
-        {
-            int idx = (int)c;
-            if (idx >= 0 && idx < GameColors.Palette.Length)
-                return idx;
-        }
-
-        // 2) Fallback al esquema viejo por ActorNumber (por si entr�s directo a Gameplay en tests)
-        int fallback = photonView.Owner.ActorNumber - 1;
-        if (fallback < 0) fallback = 0;
-        if (fallback >= GameColors.Palette.Length) fallback = GameColors.Palette.Length - 1;
-        return fallback;
-    }
+    // Sin logica: intencionalmente NO tiñe el modelo.
 }

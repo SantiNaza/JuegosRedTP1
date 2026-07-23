@@ -16,6 +16,7 @@ public class PressurePlate : MonoBehaviourPun
 
     private int playersOnPlate = 0;   // solo se cuenta en el MasterClient
     private Vector3 initialVisualPos;
+    public float PressedTime { get; private set; }
 
     public bool IsPressed => playersOnPlate > 0;
 
@@ -33,6 +34,7 @@ public class PressurePlate : MonoBehaviourPun
         playersOnPlate++;
         if (playersOnPlate == 1)
         {
+            PressedTime = Time.time;   // momento exacto en que se pisó
             photonView.RPC(nameof(RPC_SetPressed), RpcTarget.All, true);
             if (door != null) door.EvaluatePlates();
         }

@@ -12,10 +12,13 @@ public class PressureDoor : MonoBehaviourPun
     public Vector3 openOffset = new Vector3(0f, 4f, 0f);
     public float moveSpeed = 3f;
 
+    [Header("Simultaneidad")]
+    public float simultaneityTolerance = 0.5f;
+
     private Vector3 closedPos;
     private Vector3 openPos;
     private bool isOpen = false;
-    private bool alreadyOpened = false; // una vez abierta, queda así para siempre
+    private bool alreadyOpened = false; 
 
     void Awake()
     {
@@ -24,30 +27,29 @@ public class PressureDoor : MonoBehaviourPun
         openPos = closedPos + openOffset;
     }
 
-    // Lo llaman las placas (corre solo en el MasterClient)
     public void EvaluatePlates()
     {
         if (!PhotonNetwork.IsMasterClient) return;
-
-        // Si ya se abrió alguna vez, no volvemos a evaluar nunca más
         if (alreadyOpened) return;
 
-        bool allPressed = true;
+        float minTime = float.MaxValue;
+        float maxTime = float.MinValue;
+
         foreach (PressurePlate plate in plates)
         {
             if (plate == null || !plate.IsPressed)
-            {
-                allPressed = false;
-                break;
-            }
+                return; 
+
+            minTime = Mathf.Min(minTime, plate.PressedTime);
+            maxTime = Mathf.Max(maxTime, plate.PressedTime);
         }
 
-        if (allPressed)
+        if (maxTime - minTime <= simultaneityTolerance)
         {
             alreadyOpened = true;
-            // Buffered: el que entre tarde también la ve abierta
             photonView.RPC(nameof(RPC_OpenForever), RpcTarget.AllBuffered);
         }
+       
     }
 
     [PunRPC]

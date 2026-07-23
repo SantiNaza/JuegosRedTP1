@@ -22,6 +22,18 @@ public class CharacterSelector : MonoBehaviourPunCallbacks
     [Header("Input Nickname")]
     public TMP_InputField nameInputField; // Arrastrá tu InputField de la UI acá
 
+    [Header("Modelos de personaje")]
+    public GameObject[] previewModels;   // 5 modelos de preview en la pantalla de select
+    public Button modelLeftButton;
+    public Button modelRightButton;
+
+    const string KEY_MODEL = "model";
+    const string PREF_MODEL = "preferred_model";
+    int currentModelIndex = 0;
+
+    [Header("Ocultar arma en preview")]
+    public string weaponTag = "Weapon";   // tag del arma a esconder en el select
+
     const string KEY_COLOR = "color";
     const string KEY_READY = "ready";
     const string PREF_COLOR = "preferred_color"; 
@@ -57,6 +69,132 @@ public class CharacterSelector : MonoBehaviourPunCallbacks
                 PlayerPrefs.SetString("nickname", val);
             });
         }
+
+        if (modelLeftButton != null) modelLeftButton.onClick.AddListener(() => ChangeModel(-1));
+        if (modelRightButton != null) modelRightButton.onClick.AddListener(() => ChangeModel(1));
+
+        // Restaurar el modelo preferido de la sesión anterior
+        SelectInitialModel();
+
+        OcultarArmasEnPreview();
+    }
+
+    void ChangeModel(int dir)
+    {
+        if (confirmed) return;
+        int len = previewModels.Length;
+        if (len == 0) return;
+
+        // Buscamos el proximo modelo LIBRE en esa direccion
+        int next = currentModelIndex;
+        for (int i = 0; i < len; i++)
+        {
+            next = (next + dir + len) % len;
+            if (!IsModelTaken(next)) { SetModel(next); return; }
+        }
+    }
+
+    // Un modelo esta ocupado si otro jugador ya lo eligio
+    bool IsModelTaken(int index)
+    {
+        foreach (var p in PhotonNetwork.PlayerList)
+        {
+            if (p.IsLocal) continue;
+            if (p.CustomProperties.TryGetValue(KEY_MODEL, out var m) && (int)m == index)
+                return true;
+        }
+        return false;
+    }
+
+    // Elige un modelo libre al entrar (preferido guardado, o el primero disponible)
+    void SelectInitialModel()
+    {
+        int len = previewModels.Length;
+        if (len == 0) return;
+
+        // 1) modelo preferido guardado, si esta libre
+        int preferred = PlayerPrefs.GetInt(PREF_MODEL, -1);
+        if (preferred >= 0 && preferred < len && !IsModelTaken(preferred))
+        {
+            SetModel(preferred);
+            return;
+        }
+
+        // 2) buscar el primero libre empezando por el ActorNumber
+        int start = (PhotonNetwork.LocalPlayer.ActorNumber - 1) % len;
+        if (start < 0) start = 0;
+        for (int i = 0; i < len; i++)
+        {
+            int idx = (start + i) % len;
+            if (!IsModelTaken(idx)) { SetModel(idx); return; }
+        }
+
+        // 3) todos ocupados (no deberia pasar con modelos >= jugadores)
+        SetModel(start);
+    }
+
+    // Si dos eligieron el mismo modelo casi a la vez, el de ActorNumber mayor cede
+    void ResolveModelCollision()
+    {
+        foreach (var p in PhotonNetwork.PlayerList)
+        {
+            if (p.IsLocal) continue;
+            if (p.CustomProperties.TryGetValue(KEY_MODEL, out var m) && (int)m == currentModelIndex
+                && p.ActorNumber < PhotonNetwork.LocalPlayer.ActorNumber)
+            {
+                ChangeModel(1); // yo cedo, busco otro libre
+                return;
+            }
+        }
+    }
+
+    // Oculta cualquier hijo con el tag del arma en los modelos de preview
+    void OcultarArmasEnPreview()
+    {
+        if (previewModels == null || previewModels.Length == 0)
+        {
+            Debug.LogWarning("[Select] previewModels VACIO: asignalos en el Inspector.");
+            return;
+        }
+
+        int total = 0;
+        foreach (GameObject model in previewModels)
+        {
+            if (model == null) continue;
+
+            // includeInactive = true: encuentra el arma aunque el modelo este apagado
+            foreach (Transform t in model.GetComponentsInChildren<Transform>(true))
+            {
+                if (t.CompareTag(weaponTag))
+                {
+                    t.gameObject.SetActive(false);
+                    total++;
+                    Debug.Log($"[Select] Arma ocultada en '{model.name}' -> '{t.name}'");
+                }
+            }
+        }
+
+        Debug.Log($"[Select] Total armas ocultadas: {total} | previewModels: {previewModels.Length} | tag: '{weaponTag}'");
+    }
+
+    void SetModel(int index)
+    {
+        currentModelIndex = index;
+
+        // Preview: activamos solo el modelo elegido
+        for (int i = 0; i < previewModels.Length; i++)
+            if (previewModels[i] != null)
+                previewModels[i].SetActive(i == index);
+
+        // (Opcional) si querés seguir tiñendo con el color elegido, apuntamos
+        // el renderer de preview al modelo activo y reaplicamos el color:
+        // El color ya NO tine el modelo de preview: se usa solo para los nombres.
+
+        // Guardamos la elección: se sincroniza a todos y persiste entre escenas
+        PhotonNetwork.LocalPlayer.SetCustomProperties(new Hashtable { { KEY_MODEL, index } });
+
+        PlayerPrefs.SetInt(PREF_MODEL, index);
+        PlayerPrefs.Save();
     }
 
     bool IsTaken(int index)
@@ -109,9 +247,8 @@ public class CharacterSelector : MonoBehaviourPunCallbacks
     void SetColor(int index)
     {
         currentIndex = index;
-        if (characterRenderer != null)
-            characterRenderer.material.color = GameColors.Palette[index];
 
+        // El color ya NO tine el modelo: solo guardamos la eleccion para los nombres.
         PhotonNetwork.LocalPlayer.SetCustomProperties(new Hashtable { { KEY_COLOR, index } });
 
         PlayerPrefs.SetInt(PREF_COLOR, index); // NUEVO: recordar la preferencia
@@ -146,6 +283,8 @@ public class CharacterSelector : MonoBehaviourPunCallbacks
         leftButton.interactable = false;
         rightButton.interactable = false;
         confirmButton.interactable = false;
+        if (modelLeftButton != null) modelLeftButton.interactable = false;
+        if (modelRightButton != null) modelRightButton.interactable = false;
         PhotonNetwork.LocalPlayer.SetCustomProperties(new Hashtable { { KEY_READY, true } });
         CheckAllReady();
     }
@@ -157,6 +296,13 @@ public class CharacterSelector : MonoBehaviourPunCallbacks
             && currentIndex >= 0 && IsTaken(currentIndex))
         {
             ResolveCollision();
+        }
+
+        // colision de MODELO: dos eligieron el mismo personaje casi a la vez
+        if (changedProps.ContainsKey(KEY_MODEL) && !confirmed
+            && IsModelTaken(currentModelIndex))
+        {
+            ResolveModelCollision();
         }
 
         UpdateStatus();

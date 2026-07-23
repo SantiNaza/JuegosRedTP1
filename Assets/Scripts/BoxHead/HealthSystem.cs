@@ -210,7 +210,11 @@ public class HealthSystem : MonoBehaviourPun
     [PunRPC]
     public void RPC_TakeDamage(float damage, int shooterViewID)
     {
-        if (isDowned || isDead) return;
+        if (isDowned || isDead)
+        {
+            Debug.Log($"[Vida] {name} IGNORO daño. isDowned={isDowned} isDead={isDead}");
+            return;
+        }
 
         currentHealth -= damage;
 
@@ -272,6 +276,7 @@ public class HealthSystem : MonoBehaviourPun
         isDowned = false;
         isDead = false; // ¡LA CORRECCIÓN CLAVE!
         currentHealth = maxHealth / 2;
+        Debug.Log($"[Vida] {name} REVIVIDO -> isDowned={isDowned} isDead={isDead} (ambos deben ser false)");
 
         if (countdownTextObj != null) countdownTextObj.SetActive(false);
 

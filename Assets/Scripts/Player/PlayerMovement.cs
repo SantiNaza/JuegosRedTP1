@@ -30,6 +30,11 @@ public class PlayerMovement : MonoBehaviourPun
     private bool isKnockedBack = false;
     private TopDownWeaponController weaponController;
 
+    [Header("Animacion")]
+    private Animator animator;
+    private bool lastWalking;
+    private bool lastRunning;
+
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
@@ -42,6 +47,9 @@ public class PlayerMovement : MonoBehaviourPun
 
     private void Start()
     {
+        // El Animator del modelo activo (PlayerModel ya lo activo en Awake)
+        animator = GetComponentInChildren<Animator>();
+
         // El dueño del jugador le pide a la red que cree el texto para todos
         if (photonView.IsMine)
         {
@@ -52,9 +60,12 @@ public class PlayerMovement : MonoBehaviourPun
     private void Update()
     {
         // NUEVO: Bloqueamos los inputs si el menú de pausa local está abierto
-        if (!photonView.IsMine || isKnockedBack || LocalPauseMenu.isPaused)
+        if (!photonView.IsMine) return; // los remotos animan por RPC, no por input
+
+        if (isKnockedBack || LocalPauseMenu.isPaused)
         {
             moveInput = Vector3.zero; // Frenamos al personaje para que no siga resbalando
+            ActualizarAnimacion();    // queda en idle mientras esta quieto/pausado
             return;
         }
 
@@ -64,6 +75,7 @@ public class PlayerMovement : MonoBehaviourPun
         moveInput = new Vector3(horizontal, 0f, vertical).normalized;
 
         ManejarStamina();
+        ActualizarAnimacion();
 
         if (Input.GetKeyDown(KeyCode.Space) && IsGrounded())
         {
@@ -149,6 +161,52 @@ public class PlayerMovement : MonoBehaviourPun
     private bool IsGrounded()
     {
         return Physics.Raycast(transform.position, Vector3.down, groundCheckDistance, groundLayer);
+    }
+
+    // ==========================================
+    // ANIMACION (IsWalking / IsRunning)
+    // ==========================================
+    private void ActualizarAnimacion()
+    {
+        bool isMoving = moveInput.magnitude > 0.01f;
+        bool isReloading = weaponController != null && weaponController.isReloading;
+
+        // Running solo si: se mueve + Shift + tiene aire + no esta recargando
+        bool isSprinting = isMoving && Input.GetKey(KeyCode.LeftShift) && !isExhausted && !isReloading;
+
+        // IsWalking queda activo SIEMPRE que te movas (asi nunca vuelve a idle
+        // en pleno sprint). IsRunning se suma cuando esprintas.
+        bool walking = isMoving;      // moviendose (normal o sprint)
+        bool running = isSprinting;   // ademas, corriendo
+
+        // Solo avisamos por red cuando el estado CAMBIA (no cada frame)
+        if (walking != lastWalking || running != lastRunning)
+        {
+            lastWalking = walking;
+            lastRunning = running;
+
+            AplicarAnim(walking, running);                                        // local inmediato
+            photonView.RPC(nameof(RPC_SetAnim), RpcTarget.Others, walking, running); // resto de clientes
+        }
+    }
+
+    private void AplicarAnim(bool walking, bool running)
+    {
+        if (animator == null)
+        {
+            Debug.LogWarning("[Anim] animator NULL: no se encontro Animator en el modelo activo");
+            return;
+        }
+        Debug.Log($"[Anim] IsWalking={walking} IsRunning={running}");
+        animator.SetBool("IsWalking", walking);
+        animator.SetBool("IsRunning", running);
+    }
+
+    // Aplica los bools del Animator en los clientes remotos (cada uno en su modelo activo)
+    [PunRPC]
+    private void RPC_SetAnim(bool walking, bool running)
+    {
+        AplicarAnim(walking, running);
     }
 
     // ==========================================
