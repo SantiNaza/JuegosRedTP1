@@ -3,7 +3,7 @@ using UnityEngine.Networking;
 using System.Collections;
 using System.Collections.Generic;
 using Newtonsoft.Json;
-using Photon.Pun; 
+using Photon.Pun;
 
 [System.Serializable]
 public class ReporteMuerte
@@ -30,6 +30,10 @@ public class API_LaOrden : MonoBehaviour
 
     public static int aliadosRescatadosLocales = 0;
     public static int aliadosRevividosLocales = 0;
+
+    [Header("Reporte Final")]
+    [Tooltip("Tope de segundos que esperamos a que termine la partida antes de mostrar el reporte igual.")]
+    [SerializeField] private float esperaMaximaFinPartida = 240f;
 
     // Esta función calcula toda la matemática y la manda al encriptador
     public static int GuardarExperienciaLocal(bool sobrevivio)
@@ -71,7 +75,7 @@ public class API_LaOrden : MonoBehaviour
 
     private IEnumerator EnviarPostYDescargar(string json)
     {
-
+        // ---------- 1) SUBIR el reporte (esto sí se hace apenas morís) ----------
         using (UnityWebRequest www = new UnityWebRequest(webAppUrl, "POST"))
         {
             byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(json);
@@ -89,10 +93,15 @@ public class API_LaOrden : MonoBehaviour
             }
         }
 
-        // Esperamos 2 segundos para darle tiempo a Google de guardar los datos de todos
+        // ---------- 2) ESPERAR a que la partida termine de verdad ----------
+        // Mientras quede aunque sea un jugador en juego (vivo o derribado), NO mostramos
+        // el reporte. Si a vos te reviven, esto sigue esperando y el cartel no aparece.
+        yield return StartCoroutine(EsperarFinDePartida());
+
+        // ---------- 3) DESCARGAR y MOSTRAR ----------
+        // Le damos tiempo a Google de registrar los datos de todos los jugadores
         yield return new WaitForSeconds(2f);
 
-        // DESCARGAMOS LOS ÚLTIMOS REGISTROS
         using (UnityWebRequest wwwGet = UnityWebRequest.Get(webAppUrl))
         {
             yield return wwwGet.SendWebRequest();
@@ -110,28 +119,46 @@ public class API_LaOrden : MonoBehaviour
 
                 string textoTerminal = "ARCHIVOS ANALÓGICOS RECUPERADOS:\n----------------------------------\n";
 
-            
                 int jugadoresEnPartida = PhotonNetwork.CurrentRoom != null ? PhotonNetwork.CurrentRoom.PlayerCount : 1;
 
-                
                 int startIndex = Mathf.Max(0, ultimosReportes.Count - jugadoresEnPartida);
 
-                
                 for (int i = startIndex; i < ultimosReportes.Count; i++)
                 {
                     ReporteDescargado rep = ultimosReportes[i];
                     textoTerminal += $"> Agente {rep.agente} | Bajas: {rep.kills} | Extracción: {rep.tiempo}\n";
                 }
 
-
                 textoTerminal += "----------------------------------\nFIN DE TRANSMISIÓN.";
 
-                // Imprimimos los resultados en la pantalla negra de redundancia
                 if (HUDManager.Instance != null)
                 {
-                    HUDManager.Instance.MostrarMigracion(textoTerminal);
+                    HUDManager.Instance.MostrarReporteFinal(textoTerminal);
                 }
             }
         }
+    }
+
+    // Espera hasta que no quede NINGÚN jugador en juego, o hasta que salgamos de la sala.
+    // Tiene un tope de tiempo por si algo queda colgado.
+    private IEnumerator EsperarFinDePartida()
+    {
+        float tiempoEsperado = 0f;
+
+        while (tiempoEsperado < esperaMaximaFinPartida)
+        {
+            // si ya no estamos en la sala, no tiene sentido seguir esperando
+            if (!PhotonNetwork.InRoom) yield break;
+
+            if (HUDManager.Instance == null) yield break;
+
+            int enJuego = HUDManager.Instance.ContarJugadoresEnJuego();
+            if (enJuego <= 0) yield break;   // partida terminada
+
+            yield return new WaitForSeconds(0.5f);
+            tiempoEsperado += 0.5f;
+        }
+
+        Debug.LogWarning("[API] Se alcanzó la espera máxima; se muestra el reporte igual.");
     }
 }

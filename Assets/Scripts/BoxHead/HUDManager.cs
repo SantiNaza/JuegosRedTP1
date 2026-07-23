@@ -35,6 +35,11 @@ public class HUDManager : MonoBehaviour
     [Header("UI Derrota")]
     public GameObject panelDerrota;
 
+    [Header("UI Reporte Final (opcional)")]
+    [Tooltip("Si los dejás vacíos, el reporte se muestra en el panel de Migración como hasta ahora.")]
+    public GameObject panelReporteFinal;
+    public TextMeshProUGUI textoReporteFinal;
+
     // ---------- Paleta del kit ----------
     public static readonly Color AMBER = new Color32(0xF5, 0xA8, 0x28, 0xFF); // ámbar principal
     public static readonly Color CREAM = new Color32(0xEB, 0xE1, 0xCD, 0xFF); // texto normal
@@ -62,6 +67,7 @@ public class HUDManager : MonoBehaviour
     // estado de la derrota
     private bool huboJugadores;      // ya se detectó al menos un jugador vivo alguna vez
     private bool derrotaMostrada;    // para no dispararla más de una vez
+    private bool mostrandoReporteFinal; // el reporte está en pantalla, no lo pisemos
 
     void Awake()
     {
@@ -83,6 +89,7 @@ public class HUDManager : MonoBehaviour
 
         // Apagamos el panel de derrota al empezar
         if (panelDerrota != null) panelDerrota.SetActive(false);
+        if (panelReporteFinal != null) panelReporteFinal.SetActive(false);
 
         AplicarPaletaInicial();
         RefrescarListaJugadores();
@@ -329,6 +336,27 @@ public class HUDManager : MonoBehaviour
         ForzarDerrota();
     }
 
+    // Muestra el reporte de fin de partida ("ARCHIVOS ANALÓGICOS RECUPERADOS").
+    // Si no asignaste panelReporteFinal, cae al panel de Migración como antes.
+    public void MostrarReporteFinal(string texto)
+    {
+        mostrandoReporteFinal = true;
+
+        if (panelReporteFinal != null)
+        {
+            panelReporteFinal.SetActive(true);
+            if (textoReporteFinal != null)
+            {
+                textoReporteFinal.text = texto;
+                textoReporteFinal.color = AMBER;
+            }
+        }
+        else
+        {
+            MostrarMigracion(texto);
+        }
+    }
+
     // Muestra la derrota sin chequear nada. Usar solo si de verdad hace falta.
     public void ForzarDerrota()
     {
@@ -337,9 +365,10 @@ public class HUDManager : MonoBehaviour
 
         if (panelDerrota != null) panelDerrota.SetActive(true);
 
-        // apagamos el resto de la UI central para que no se superponga
         OcultarTextoExtraccion();
-        OcultarMigracion();
+
+        // OJO: no apagamos la migración si ahí se está mostrando el reporte final
+        if (!mostrandoReporteFinal) OcultarMigracion();
 
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
