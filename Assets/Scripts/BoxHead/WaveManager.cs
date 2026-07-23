@@ -7,6 +7,7 @@ using Unity.Services.Core;
 using Unity.Services.RemoteConfig;
 using UnityEngine;
 using UnityEngine.AI;
+using Hashtable = ExitGames.Client.Photon.Hashtable; // NUEVO: Importante para la pizarra de Photon
 
 public class WaveManager : MonoBehaviourPun
 {
@@ -19,14 +20,25 @@ public class WaveManager : MonoBehaviourPun
     private int zombiesAlive = 0;
     private float timeBetweenSpawns = 1f;
 
-    public static bool fuegoAmigoActivado = false;
+    // ¡LA REGLA ABSOLUTA! Ahora cada vez que una bala pregunte por esta variable, 
+    // el código va a ir a leer directamente la configuración global de la sala.
+    public static bool fuegoAmigoActivado
+    {
+        get
+        {
+            if (PhotonNetwork.InRoom && PhotonNetwork.CurrentRoom.CustomProperties.ContainsKey("FuegoAmigo"))
+            {
+                return (bool)PhotonNetwork.CurrentRoom.CustomProperties["FuegoAmigo"];
+            }
+            return false; // Valor seguro por si todavía no se descargó la regla
+        }
+    }
 
     private bool partidaIniciada = false;
     private bool juegoTerminado = false;
 
     async void Start()
     {
-        // 1. Iniciamos la comprobación de sala normal e inmediata (Como tenías antes)
         if (PhotonNetwork.InRoom)
         {
             ComprobarYArrancar();
@@ -36,7 +48,6 @@ public class WaveManager : MonoBehaviourPun
             PhotonManager.Instance.OnRoom += ComprobarYArrancar;
         }
 
-        // 2. Iniciamos Unity Services en segundo plano sin frenar el juego
         if (PhotonNetwork.IsMasterClient)
         {
             if (UnityServices.State == ServicesInitializationState.Uninitialized)
@@ -78,11 +89,8 @@ public class WaveManager : MonoBehaviourPun
         if (PhotonNetwork.IsMasterClient)
         {
             CargarSpawnPointsDelMapa();
-
-            // ARRANCAMOS LA OLEADA INMEDIATAMENTE (Soluciona la falta de enemigos)
             StartCoroutine(StartWave());
 
-            // Pedimos los datos en segundo plano
             if (UnityServices.State == ServicesInitializationState.Initialized)
             {
                 RemoteConfigService.Instance.FetchConfigs(new userAttributes(), new appAttributes());
@@ -102,17 +110,14 @@ public class WaveManager : MonoBehaviourPun
     private void AplicarConfiguracionRemota(ConfigResponse response)
     {
         timeBetweenSpawns = RemoteConfigService.Instance.appConfig.GetFloat("SpawnRate", 1.0f);
-        fuegoAmigoActivado = RemoteConfigService.Instance.appConfig.GetBool("fuegoAmigoActivado", false);
+        bool fuegoAmigoNube = RemoteConfigService.Instance.appConfig.GetBool("fuegoAmigoActivado", false);
 
-        // Avisamos a todo el escuadrón
-        photonView.RPC("RPC_SincronizarLiveOps", RpcTarget.AllBuffered, timeBetweenSpawns, fuegoAmigoActivado);
-    }
+        // REEMPLAZAMOS EL RPC: El Host escribe la regla en la "pizarra" de la sala para todos
+        Hashtable props = new Hashtable();
+        props.Add("FuegoAmigo", fuegoAmigoNube);
+        PhotonNetwork.CurrentRoom.SetCustomProperties(props);
 
-    [PunRPC]
-    private void RPC_SincronizarLiveOps(float spawnRateRed, bool fuegoAmigoRed)
-    {
-        timeBetweenSpawns = spawnRateRed;
-        fuegoAmigoActivado = fuegoAmigoRed;
+        Debug.Log("Live-Ops | Spawns: " + timeBetweenSpawns + "s | Fuego Amigo guardado en la Sala.");
     }
 
     IEnumerator StartWave()
@@ -121,7 +126,6 @@ public class WaveManager : MonoBehaviourPun
 
         for (int i = 0; i < zombiesToSpawn; i++)
         {
-            // Seguridad: Si no hay prefabs o puntos, cortamos
             if (zombiePrefabs == null || zombiePrefabs.Length == 0) break;
             if (enemySpawnPoints == null || enemySpawnPoints.Count == 0) break;
 
@@ -158,7 +162,6 @@ public class WaveManager : MonoBehaviourPun
             RemoteConfigService.Instance.FetchConfigs(new userAttributes(), new appAttributes());
         }
 
-        // La siguiente oleada arranca SIEMPRE
         StartCoroutine(StartWave());
     }
 
