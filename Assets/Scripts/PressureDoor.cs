@@ -12,13 +12,14 @@ public class PressureDoor : MonoBehaviourPun
     public Vector3 openOffset = new Vector3(0f, 4f, 0f);
     public float moveSpeed = 3f;
 
-    [Header("Simultaneidad")]
-    public float simultaneityTolerance = 0.5f;
+    [Header("Tolerancia de Reflejos (Segundos)")]
+    [Tooltip("Cuánto tiempo de diferencia puede haber entre que A y B presionan la tecla")]
+    public double simultaneityTolerance = 0.5;
 
     private Vector3 closedPos;
     private Vector3 openPos;
     private bool isOpen = false;
-    private bool alreadyOpened = false; 
+    private bool alreadyOpened = false;
 
     void Awake()
     {
@@ -32,24 +33,23 @@ public class PressureDoor : MonoBehaviourPun
         if (!PhotonNetwork.IsMasterClient) return;
         if (alreadyOpened) return;
 
-        float minTime = float.MaxValue;
-        float maxTime = float.MinValue;
+        double currentTime = PhotonNetwork.Time;
 
+        // Verificamos si TODAS las placas fueron presionadas recientemente
         foreach (PressurePlate plate in plates)
         {
-            if (plate == null || !plate.IsPressed)
-                return; 
+            if (plate == null) return;
 
-            minTime = Mathf.Min(minTime, plate.PressedTime);
-            maxTime = Mathf.Max(maxTime, plate.PressedTime);
+            // Si la placa nunca se presionó, o si se presionó hace MÁS del tiempo tolerado, abortamos
+            if (currentTime - plate.PressedTime > simultaneityTolerance)
+            {
+                return;
+            }
         }
 
-        if (maxTime - minTime <= simultaneityTolerance)
-        {
-            alreadyOpened = true;
-            photonView.RPC(nameof(RPC_OpenForever), RpcTarget.AllBuffered);
-        }
-       
+        // ¡Si el código llega hasta acá, significa que ambas placas pasaron la prueba!
+        alreadyOpened = true;
+        photonView.RPC(nameof(RPC_OpenForever), RpcTarget.AllBuffered);
     }
 
     [PunRPC]
