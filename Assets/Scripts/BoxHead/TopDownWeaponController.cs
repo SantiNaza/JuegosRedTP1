@@ -346,19 +346,36 @@ public class TopDownWeaponController : MonoBehaviourPun
         Collider[] impactados = Physics.OverlapSphere(centroDelGolpe, meleeRange);
         foreach (Collider col in impactados)
         {
+            // Ignoramos a nosotros mismos para no patearnos solos
             if (col.gameObject == this.gameObject) continue;
+
             Vector3 direccionEmpuje = (col.transform.position - transform.position).normalized;
             direccionEmpuje.y = 0;
+
             PhotonView targetView = col.GetComponent<PhotonView>();
             if (targetView == null) continue;
+
             if (col.CompareTag("Zombie"))
             {
+                // A los Zombis siempre se les hace daño y empuje
                 HealthSystem targetHealth = col.GetComponent<HealthSystem>();
                 if (targetHealth != null) targetView.RPC("RPC_TakeDamage", RpcTarget.All, kickDamage, photonView.ViewID);
+
                 targetView.RPC("RPC_ApplyKnockback", RpcTarget.MasterClient, direccionEmpuje * kickForce);
             }
             else if (col.CompareTag("Player"))
             {
+                // LÓGICA DE FUEGO AMIGO: Solo hace daño si LiveOps lo habilita
+                if (WaveManager.fuegoAmigoActivado)
+                {
+                    HealthSystem allyHealth = col.GetComponent<HealthSystem>();
+                    if (allyHealth != null)
+                    {
+                        targetView.RPC("RPC_TakeDamage", RpcTarget.All, kickDamage, photonView.ViewID);
+                    }
+                }
+
+                // El empuje se lo aplicamos siempre (¡es genial para empujar a un aliado trabado!)
                 targetView.RPC("RPC_ApplyKnockback", targetView.Owner, direccionEmpuje * kickForce);
             }
         }

@@ -95,8 +95,8 @@ public class WaveManager : MonoBehaviourPun
         // Leemos la velocidad de los zombis que ya tenías
         timeBetweenSpawns = RemoteConfigService.Instance.appConfig.GetFloat("SpawnRate", 1.0f);
 
-        // Leemos nuestra llave de fuego amigo desde la nube
-        fuegoAmigoActivado = RemoteConfigService.Instance.appConfig.GetBool("fuego_amigo_activado", false);
+        // Leemos nuestra llave de fuego amigo desde la nube (¡Ahora con el nombre correcto!)
+        fuegoAmigoActivado = RemoteConfigService.Instance.appConfig.GetBool("fuegoAmigoActivado", false);
 
         Debug.Log("Live-Ops | Spawns: " + timeBetweenSpawns + "s | Fuego Amigo: " + fuegoAmigoActivado);
     }
