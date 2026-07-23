@@ -1,5 +1,7 @@
 using UnityEngine;
 using Photon.Pun;
+using Unity.Services.Core;
+using Unity.Services.RemoteConfig;
 
 [RequireComponent(typeof(PhotonView))]
 public class HealthPickup : MonoBehaviourPun
@@ -80,7 +82,14 @@ public class HealthPickup : MonoBehaviourPun
         }
 
         if (PhotonNetwork.IsMasterClient)
+        {
+            // LEEMOS LIVEOPS ANTES DE INICIAR EL RELOJ
+            if (UnityServices.State == ServicesInitializationState.Initialized)
+            {
+                respawnTime = RemoteConfigService.Instance.appConfig.GetFloat("respawnHealth", respawnTime);
+            }
             Invoke(nameof(RespawnByMaster), respawnTime);
+        }
     }
 
     private void RespawnByMaster()

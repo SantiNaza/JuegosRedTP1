@@ -1,5 +1,7 @@
 using UnityEngine;
 using Photon.Pun;
+using Unity.Services.Core;
+using Unity.Services.RemoteConfig;
 
 [RequireComponent(typeof(PhotonView))]
 public class GrenadePickup : MonoBehaviourPun
@@ -69,14 +71,20 @@ public class GrenadePickup : MonoBehaviourPun
             TopDownWeaponController weapon = GetLocalWeaponController();
             if (weapon != null)
             {
-                // SUMAMOS LA GRANADA AL ARMA
                 weapon.granadasActuales += granadasQueDa;
                 Debug.Log("Granada recogida. Granadas actuales: " + weapon.granadasActuales);
             }
         }
 
         if (PhotonNetwork.IsMasterClient)
+        {
+            // LEEMOS LIVEOPS ANTES DE INICIAR EL RELOJ
+            if (UnityServices.State == ServicesInitializationState.Initialized)
+            {
+                respawnTime = RemoteConfigService.Instance.appConfig.GetFloat("respawnGrenade", respawnTime);
+            }
             Invoke(nameof(RespawnByMaster), respawnTime);
+        }
     }
 
     private void RespawnByMaster()
