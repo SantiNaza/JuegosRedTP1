@@ -3849,13 +3849,17 @@ MonoBehaviour:
     barraVida: {fileID: 7607991085711034857}
     textoCargadores: {fileID: 7607991084783682100}
   textoExtraccion: {fileID: 7607991084726993562}
+  botonExtraccion: {fileID: 1510489423827811501, guid: 742386ffc83947e46b539d3f78094a33, type: 3}
   panelFondoMigracion: {fileID: 5763555135832287683}
   textoMigracion: {fileID: 3741236937212572466}
   textoNotificaciones: {fileID: 5683829076041929795}
   panelDerrota: {fileID: 3763916797818874845}
+  panelReporteFinal: {fileID: 0}
+  textoReporteFinal: {fileID: 0}
   tenirBarraConColorJugador: 1
   umbralVidaCritica: 0.25
   intervaloRefrescoJugadores: 0.5
+  retrasoInicialDerrota: 4
 --- !u!1 &7607991085920114913
 GameObject:
   m_ObjectHideFlags: 0
