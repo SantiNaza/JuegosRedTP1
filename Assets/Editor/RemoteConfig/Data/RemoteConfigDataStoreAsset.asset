@@ -12,78 +12,92 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 469c24fdb3bd6431b92cc1465bd9166b, type: 3}
   m_Name: RemoteConfigDataStoreAsset
   m_EditorClassIdentifier: 
-  _rsKeyList: "[\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"4edc572e-9682-40f3-93fa-23278cb90ef3\"\r\n   
+  _rsKeyList: "[\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"c7b58dd4-0b60-40ac-9ebb-6a432ff2a5eb\"\r\n   
     },\r\n    \"rs\": {\r\n      \"key\": \"SpawnRate\",\r\n      \"type\": \"float\",\r\n     
     \"value\": 2.0\r\n    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\":
-    \"3af17ff6-4081-4472-981f-73adf0f41d73\"\r\n    },\r\n    \"rs\": {\r\n     
+    \"eb298900-5c59-449c-8bc8-7ab4e152c714\"\r\n    },\r\n    \"rs\": {\r\n     
     \"key\": \"fuegoAmigoActivado\",\r\n      \"type\": \"bool\",\r\n      \"value\":
-    true\r\n    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"d49ec534-7c0d-49f3-ac23-913c7e7d6053\"\r\n   
+    true\r\n    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"c95da309-fbf2-4eaf-b491-4b83b404fc1a\"\r\n   
     },\r\n    \"rs\": {\r\n      \"key\": \"pesoNormal\",\r\n      \"type\": \"int\",\r\n     
     \"value\": 70\r\n    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\":
-    \"021609e1-d277-423c-ad1e-74a9ca9048f3\"\r\n    },\r\n    \"rs\": {\r\n     
+    \"5db9353c-ef5e-4971-a740-b573e2a967ea\"\r\n    },\r\n    \"rs\": {\r\n     
     \"key\": \"pesoFast\",\r\n      \"type\": \"int\",\r\n      \"value\": 20\r\n   
-    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"4c427145-4480-495e-b1a2-8fc975b21c79\"\r\n   
+    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"0cbb006f-62c6-40db-897b-686ecdf8aee3\"\r\n   
     },\r\n    \"rs\": {\r\n      \"key\": \"pesoTank\",\r\n      \"type\": \"int\",\r\n     
     \"value\": 10\r\n    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\":
-    \"41f5f0f4-5e14-4144-b600-a899d028cc46\"\r\n    },\r\n    \"rs\": {\r\n     
+    \"9dcc278e-6c95-41d7-8943-76ea63ebc427\"\r\n    },\r\n    \"rs\": {\r\n     
     \"key\": \"Normal_HP\",\r\n      \"type\": \"float\",\r\n      \"value\": 100.0\r\n   
-    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"b6f645ab-fa17-4a20-92de-624a34b9301f\"\r\n   
+    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"2e0e8c12-7b97-4933-bec5-d8519d3cc950\"\r\n   
     },\r\n    \"rs\": {\r\n      \"key\": \"Normal_Damage\",\r\n      \"type\": \"float\",\r\n     
     \"value\": 10.0\r\n    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\":
-    \"7c928a84-d110-4c0a-bd7d-76fa0fad7508\"\r\n    },\r\n    \"rs\": {\r\n     
+    \"35ba0428-900d-4b2b-9337-378fabf5618c\"\r\n    },\r\n    \"rs\": {\r\n     
     \"key\": \"Normal_Speed\",\r\n      \"type\": \"float\",\r\n      \"value\":
-    3.5\r\n    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"17ac9dcc-5868-47cb-b3a3-6fe124968d6c\"\r\n   
+    3.5\r\n    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"ac88fc6b-906a-43d2-98dc-ab0d7b5460f4\"\r\n   
     },\r\n    \"rs\": {\r\n      \"key\": \"Fast_HP\",\r\n      \"type\": \"float\",\r\n     
     \"value\": 50.0\r\n    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\":
-    \"b22074ca-08a4-4996-8350-45eaee734a9a\"\r\n    },\r\n    \"rs\": {\r\n     
+    \"3a6d9c37-42e8-49e7-9cd4-0f19eeba82e8\"\r\n    },\r\n    \"rs\": {\r\n     
     \"key\": \"Fast_Damage\",\r\n      \"type\": \"float\",\r\n      \"value\": 5.0\r\n   
-    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"d5741fc0-426a-48ab-ab44-a227da57a32e\"\r\n   
+    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"c41d0bf9-450e-4db0-b4ed-c19abe097d07\"\r\n   
     },\r\n    \"rs\": {\r\n      \"key\": \"Fast_Speed\",\r\n      \"type\": \"float\",\r\n     
     \"value\": 5.0\r\n    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\":
-    \"f6e55f88-ea3c-4228-ad08-b8c78ffda7b6\"\r\n    },\r\n    \"rs\": {\r\n     
+    \"8aa7ce16-90b4-41ff-a306-580ef97cc641\"\r\n    },\r\n    \"rs\": {\r\n     
     \"key\": \"Tank_HP\",\r\n      \"type\": \"float\",\r\n      \"value\": 300.0\r\n   
-    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"d9de0f9e-d6ea-4e19-aea9-a514bbe68334\"\r\n   
+    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"265864fd-8299-434f-87e9-31c58e316440\"\r\n   
     },\r\n    \"rs\": {\r\n      \"key\": \"Tank_Damage\",\r\n      \"type\": \"float\",\r\n     
     \"value\": 20.0\r\n    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\":
-    \"2f5ab4f5-ff48-4887-b235-d99a927d1063\"\r\n    },\r\n    \"rs\": {\r\n     
+    \"e319b63d-fb55-4f43-a2b4-bad0d706b424\"\r\n    },\r\n    \"rs\": {\r\n     
     \"key\": \"Tank_Speed\",\r\n      \"type\": \"float\",\r\n      \"value\": 1.5\r\n   
-    }\r\n  }\r\n]"
-  _rsLastCachedKeyList: "[\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"4edc572e-9682-40f3-93fa-23278cb90ef3\"\r\n   
+    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"59ed2c71-3683-406b-88e4-d34d908d914a\"\r\n   
+    },\r\n    \"rs\": {\r\n      \"key\": \"respawnHealth\",\r\n      \"type\": \"float\",\r\n     
+    \"value\": 10.0\r\n    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\":
+    \"7fa9cb30-43a7-408f-a807-aaf52c826d92\"\r\n    },\r\n    \"rs\": {\r\n     
+    \"key\": \"respawnAmmo\",\r\n      \"type\": \"float\",\r\n      \"value\": 10.0\r\n   
+    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"f1e26e55-a288-4687-951b-207e7865b6da\"\r\n   
+    },\r\n    \"rs\": {\r\n      \"key\": \"respawnGrenade\",\r\n      \"type\":
+    \"float\",\r\n      \"value\": 10.0\r\n    }\r\n  }\r\n]"
+  _rsLastCachedKeyList: "[\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"c7b58dd4-0b60-40ac-9ebb-6a432ff2a5eb\"\r\n   
     },\r\n    \"rs\": {\r\n      \"key\": \"SpawnRate\",\r\n      \"type\": \"float\",\r\n     
     \"value\": 2.0\r\n    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\":
-    \"3af17ff6-4081-4472-981f-73adf0f41d73\"\r\n    },\r\n    \"rs\": {\r\n     
+    \"eb298900-5c59-449c-8bc8-7ab4e152c714\"\r\n    },\r\n    \"rs\": {\r\n     
     \"key\": \"fuegoAmigoActivado\",\r\n      \"type\": \"bool\",\r\n      \"value\":
-    true\r\n    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"d49ec534-7c0d-49f3-ac23-913c7e7d6053\"\r\n   
+    true\r\n    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"c95da309-fbf2-4eaf-b491-4b83b404fc1a\"\r\n   
     },\r\n    \"rs\": {\r\n      \"key\": \"pesoNormal\",\r\n      \"type\": \"int\",\r\n     
     \"value\": 70\r\n    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\":
-    \"021609e1-d277-423c-ad1e-74a9ca9048f3\"\r\n    },\r\n    \"rs\": {\r\n     
+    \"5db9353c-ef5e-4971-a740-b573e2a967ea\"\r\n    },\r\n    \"rs\": {\r\n     
     \"key\": \"pesoFast\",\r\n      \"type\": \"int\",\r\n      \"value\": 20\r\n   
-    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"4c427145-4480-495e-b1a2-8fc975b21c79\"\r\n   
+    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"0cbb006f-62c6-40db-897b-686ecdf8aee3\"\r\n   
     },\r\n    \"rs\": {\r\n      \"key\": \"pesoTank\",\r\n      \"type\": \"int\",\r\n     
     \"value\": 10\r\n    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\":
-    \"41f5f0f4-5e14-4144-b600-a899d028cc46\"\r\n    },\r\n    \"rs\": {\r\n     
+    \"9dcc278e-6c95-41d7-8943-76ea63ebc427\"\r\n    },\r\n    \"rs\": {\r\n     
     \"key\": \"Normal_HP\",\r\n      \"type\": \"float\",\r\n      \"value\": 100.0\r\n   
-    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"b6f645ab-fa17-4a20-92de-624a34b9301f\"\r\n   
+    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"2e0e8c12-7b97-4933-bec5-d8519d3cc950\"\r\n   
     },\r\n    \"rs\": {\r\n      \"key\": \"Normal_Damage\",\r\n      \"type\": \"float\",\r\n     
     \"value\": 10.0\r\n    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\":
-    \"7c928a84-d110-4c0a-bd7d-76fa0fad7508\"\r\n    },\r\n    \"rs\": {\r\n     
+    \"35ba0428-900d-4b2b-9337-378fabf5618c\"\r\n    },\r\n    \"rs\": {\r\n     
     \"key\": \"Normal_Speed\",\r\n      \"type\": \"float\",\r\n      \"value\":
-    3.5\r\n    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"17ac9dcc-5868-47cb-b3a3-6fe124968d6c\"\r\n   
+    3.5\r\n    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"ac88fc6b-906a-43d2-98dc-ab0d7b5460f4\"\r\n   
     },\r\n    \"rs\": {\r\n      \"key\": \"Fast_HP\",\r\n      \"type\": \"float\",\r\n     
     \"value\": 50.0\r\n    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\":
-    \"b22074ca-08a4-4996-8350-45eaee734a9a\"\r\n    },\r\n    \"rs\": {\r\n     
+    \"3a6d9c37-42e8-49e7-9cd4-0f19eeba82e8\"\r\n    },\r\n    \"rs\": {\r\n     
     \"key\": \"Fast_Damage\",\r\n      \"type\": \"float\",\r\n      \"value\": 5.0\r\n   
-    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"d5741fc0-426a-48ab-ab44-a227da57a32e\"\r\n   
+    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"c41d0bf9-450e-4db0-b4ed-c19abe097d07\"\r\n   
     },\r\n    \"rs\": {\r\n      \"key\": \"Fast_Speed\",\r\n      \"type\": \"float\",\r\n     
     \"value\": 5.0\r\n    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\":
-    \"f6e55f88-ea3c-4228-ad08-b8c78ffda7b6\"\r\n    },\r\n    \"rs\": {\r\n     
+    \"8aa7ce16-90b4-41ff-a306-580ef97cc641\"\r\n    },\r\n    \"rs\": {\r\n     
     \"key\": \"Tank_HP\",\r\n      \"type\": \"float\",\r\n      \"value\": 300.0\r\n   
-    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"d9de0f9e-d6ea-4e19-aea9-a514bbe68334\"\r\n   
+    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"265864fd-8299-434f-87e9-31c58e316440\"\r\n   
     },\r\n    \"rs\": {\r\n      \"key\": \"Tank_Damage\",\r\n      \"type\": \"float\",\r\n     
     \"value\": 20.0\r\n    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\":
-    \"2f5ab4f5-ff48-4887-b235-d99a927d1063\"\r\n    },\r\n    \"rs\": {\r\n     
+    \"e319b63d-fb55-4f43-a2b4-bad0d706b424\"\r\n    },\r\n    \"rs\": {\r\n     
     \"key\": \"Tank_Speed\",\r\n      \"type\": \"float\",\r\n      \"value\": 1.5\r\n   
-    }\r\n  }\r\n]"
+    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"59ed2c71-3683-406b-88e4-d34d908d914a\"\r\n   
+    },\r\n    \"rs\": {\r\n      \"key\": \"respawnHealth\",\r\n      \"type\": \"float\",\r\n     
+    \"value\": 10.0\r\n    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\":
+    \"7fa9cb30-43a7-408f-a807-aaf52c826d92\"\r\n    },\r\n    \"rs\": {\r\n     
+    \"key\": \"respawnAmmo\",\r\n      \"type\": \"float\",\r\n      \"value\": 10.0\r\n   
+    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"f1e26e55-a288-4687-951b-207e7865b6da\"\r\n   
+    },\r\n    \"rs\": {\r\n      \"key\": \"respawnGrenade\",\r\n      \"type\":
+    \"float\",\r\n      \"value\": 10.0\r\n    }\r\n  }\r\n]"
   _environments: "[\r\n  {\r\n    \"projectId\": \"cec5e0a2-a3ac-4c0e-b082-4a4fd0d9e112\",\r\n   
     \"name\": \"production\",\r\n    \"id\": \"bb46e423-6612-49cb-8b7b-5c6dad04489f\",\r\n   
     \"isDefault\": true,\r\n    \"createdAt\": \"2026-06-17T22:26:57Z\",\r\n    \"updatedAt\":

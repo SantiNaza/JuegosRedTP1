@@ -111,6 +111,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ea3fcbcfee7c9314ea099c7e1e9b9ebf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  prefijoLiveOps: Normal
   attackRange: 1
   attackDamage: 10
   attackCooldown: 1

@@ -89,6 +89,8 @@ MonoBehaviour:
   - RPC_ToggleSinMunicion
   - RPC_SetAnim
   - RPC_SincronizarLiveOps
+  - RPC_AnimarPlaca
+  - RPC_RegisterPress
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 1
