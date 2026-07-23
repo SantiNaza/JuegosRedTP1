@@ -24,6 +24,7 @@ public class HUDManager : MonoBehaviour
 
     [Header("UI Central (Extracción)")]
     public TextMeshProUGUI textoExtraccion;
+    public GameObject botonExtraccion;
 
     [Header("UI Migración (Host)")]
     public GameObject panelFondoMigracion;
@@ -84,6 +85,7 @@ public class HUDManager : MonoBehaviour
     void Start()
     {
         if (textoExtraccion != null) textoExtraccion.gameObject.SetActive(false);
+        if (botonExtraccion != null) botonExtraccion.SetActive(false);
         if (panelFondoMigracion != null) panelFondoMigracion.SetActive(false);
         if (textoNotificaciones != null) textoNotificaciones.gameObject.SetActive(false);
 
@@ -256,6 +258,14 @@ public class HUDManager : MonoBehaviour
             textoExtraccion.text = mensaje;
             textoExtraccion.color = colorMensaje;
         }
+
+        if (botonExtraccion != null)
+        {
+            botonExtraccion.SetActive(true);
+        }
+        
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
     }
 
     // Versión corta: usa el ámbar del kit sin tener que pasar color
@@ -270,6 +280,15 @@ public class HUDManager : MonoBehaviour
         {
             textoExtraccion.gameObject.SetActive(false);
         }
+
+        if (botonExtraccion != null)
+        {
+            botonExtraccion.SetActive(false);
+        }
+        
+       
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
     }
 
     public void MostrarMigracion(string mensaje)
