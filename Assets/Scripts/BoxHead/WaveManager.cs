@@ -7,7 +7,6 @@ using Unity.Services.Core;
 using Unity.Services.RemoteConfig;
 using UnityEngine;
 using UnityEngine.AI;
-using Hashtable = ExitGames.Client.Photon.Hashtable; // NUEVO: Importante para la pizarra de Photon
 
 public class WaveManager : MonoBehaviourPun
 {
@@ -20,24 +19,32 @@ public class WaveManager : MonoBehaviourPun
     private int zombiesAlive = 0;
     private float timeBetweenSpawns = 1f;
 
-    // ¡LA REGLA ABSOLUTA! Ahora cada vez que una bala pregunte por esta variable, 
-    // el código va a ir a leer directamente la configuración global de la sala.
-    public static bool fuegoAmigoActivado
-    {
-        get
-        {
-            if (PhotonNetwork.InRoom && PhotonNetwork.CurrentRoom.CustomProperties.ContainsKey("FuegoAmigo"))
-            {
-                return (bool)PhotonNetwork.CurrentRoom.CustomProperties["FuegoAmigo"];
-            }
-            return false; // Valor seguro por si todavía no se descargó la regla
-        }
-    }
+    // Volvemos a tu variable estática original, simple y directa.
+    public static bool fuegoAmigoActivado = false;
 
     private bool partidaIniciada = false;
     private bool juegoTerminado = false;
 
-    async void Start()
+    async void Awake()
+    {
+        // A PEDIDO TUYO: TODOS los jugadores (sin importar si son Host o Clientes) 
+        // se conectan a la nube de Unity por su cuenta en el instante 0.
+        if (UnityServices.State == ServicesInitializationState.Uninitialized)
+        {
+            await UnityServices.InitializeAsync();
+            await AuthenticationService.Instance.SignInAnonymouslyAsync();
+        }
+
+        RemoteConfigService.Instance.FetchCompleted += AplicarConfiguracionRemota;
+
+        // Cada jugador descarga su propia copia de las reglas antes de que empiece la acción
+        if (UnityServices.State == ServicesInitializationState.Initialized)
+        {
+            RemoteConfigService.Instance.FetchConfigs(new userAttributes(), new appAttributes());
+        }
+    }
+
+    void Start()
     {
         if (PhotonNetwork.InRoom)
         {
@@ -46,16 +53,6 @@ public class WaveManager : MonoBehaviourPun
         else if (PhotonManager.Instance != null)
         {
             PhotonManager.Instance.OnRoom += ComprobarYArrancar;
-        }
-
-        if (PhotonNetwork.IsMasterClient)
-        {
-            if (UnityServices.State == ServicesInitializationState.Uninitialized)
-            {
-                await UnityServices.InitializeAsync();
-                await AuthenticationService.Instance.SignInAnonymouslyAsync();
-            }
-            RemoteConfigService.Instance.FetchCompleted += AplicarConfiguracionRemota;
         }
     }
 
@@ -86,15 +83,11 @@ public class WaveManager : MonoBehaviourPun
 
     private void ComprobarYArrancar()
     {
+        // Solo el Host instancia los enemigos
         if (PhotonNetwork.IsMasterClient)
         {
             CargarSpawnPointsDelMapa();
             StartCoroutine(StartWave());
-
-            if (UnityServices.State == ServicesInitializationState.Initialized)
-            {
-                RemoteConfigService.Instance.FetchConfigs(new userAttributes(), new appAttributes());
-            }
         }
     }
 
@@ -109,15 +102,12 @@ public class WaveManager : MonoBehaviourPun
 
     private void AplicarConfiguracionRemota(ConfigResponse response)
     {
+        // CADA JUGADOR aplica los valores a sus variables locales. 
+        // Como todos leen de la misma nube, todos van a tener exactamente la misma configuración.
         timeBetweenSpawns = RemoteConfigService.Instance.appConfig.GetFloat("SpawnRate", 1.0f);
-        bool fuegoAmigoNube = RemoteConfigService.Instance.appConfig.GetBool("fuegoAmigoActivado", false);
+        fuegoAmigoActivado = RemoteConfigService.Instance.appConfig.GetBool("fuegoAmigoActivado", false);
 
-        // REEMPLAZAMOS EL RPC: El Host escribe la regla en la "pizarra" de la sala para todos
-        Hashtable props = new Hashtable();
-        props.Add("FuegoAmigo", fuegoAmigoNube);
-        PhotonNetwork.CurrentRoom.SetCustomProperties(props);
-
-        Debug.Log("Live-Ops | Spawns: " + timeBetweenSpawns + "s | Fuego Amigo guardado en la Sala.");
+        Debug.Log("Live-Ops Local | Spawns: " + timeBetweenSpawns + "s | Fuego Amigo: " + fuegoAmigoActivado);
     }
 
     IEnumerator StartWave()
@@ -157,12 +147,17 @@ public class WaveManager : MonoBehaviourPun
         yield return new WaitForSeconds(3f);
         currentWave++;
 
+        // Hacemos que todos los jugadores chequeen si cambiaste algo en LiveOps entre rondas
         if (UnityServices.State == ServicesInitializationState.Initialized)
         {
             RemoteConfigService.Instance.FetchConfigs(new userAttributes(), new appAttributes());
         }
 
-        StartCoroutine(StartWave());
+        // Solo el Host lanza la oleada
+        if (PhotonNetwork.IsMasterClient)
+        {
+            StartCoroutine(StartWave());
+        }
     }
 
     [PunRPC]
