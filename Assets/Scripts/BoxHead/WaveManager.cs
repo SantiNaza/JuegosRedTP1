@@ -30,15 +30,7 @@ public class WaveManager : MonoBehaviourPun
 
     async void Start()
     {
-        if (PhotonNetwork.InRoom)
-        {
-            ComprobarYArrancar();
-        }
-        else if (PhotonManager.Instance != null)
-        {
-            PhotonManager.Instance.OnRoom += ComprobarYArrancar;
-        }
-
+        // 1. PRIMERO inicializamos Unity Services y nos conectamos a la nube (solo el Host)
         if (PhotonNetwork.IsMasterClient)
         {
             if (UnityServices.State == ServicesInitializationState.Uninitialized)
@@ -48,6 +40,16 @@ public class WaveManager : MonoBehaviourPun
             }
 
             RemoteConfigService.Instance.FetchCompleted += AplicarConfiguracionRemota;
+        }
+
+        // 2. DESPUÉS comprobamos la sala
+        if (PhotonNetwork.InRoom)
+        {
+            ComprobarYArrancar();
+        }
+        else if (PhotonManager.Instance != null)
+        {
+            PhotonManager.Instance.OnRoom += ComprobarYArrancar;
         }
     }
 
@@ -92,28 +94,32 @@ public class WaveManager : MonoBehaviourPun
 
     private void AplicarConfiguracionRemota(ConfigResponse response)
     {
-        // Leemos la velocidad de los zombis que ya tenías
         timeBetweenSpawns = RemoteConfigService.Instance.appConfig.GetFloat("SpawnRate", 1.0f);
-
-        // Leemos nuestra llave de fuego amigo desde la nube (¡Ahora con el nombre correcto!)
         fuegoAmigoActivado = RemoteConfigService.Instance.appConfig.GetBool("fuegoAmigoActivado", false);
 
         Debug.Log("Live-Ops | Spawns: " + timeBetweenSpawns + "s | Fuego Amigo: " + fuegoAmigoActivado);
+
+        // NUEVO: El MasterClient le envía los valores oficiales a TODOS los jugadores conectados.
+        photonView.RPC("RPC_SincronizarLiveOps", RpcTarget.AllBuffered, timeBetweenSpawns, fuegoAmigoActivado);
     }
 
     private void ComprobarYArrancar()
     {
         if (PhotonNetwork.IsMasterClient)
         {
-            // Tomamos los spawnpoints rojos que generó el mapa
             CargarSpawnPointsDelMapa();
 
             if (UnityServices.State == ServicesInitializationState.Initialized)
             {
+                // Pedimos los datos. YA NO iniciamos la oleada acá.
+                // Esperamos pacientemente a que Unity responda.
                 RemoteConfigService.Instance.FetchConfigs(new userAttributes(), new appAttributes());
             }
-
-            StartCoroutine(StartWave());
+            else
+            {
+                // Failsafe: Si no hay internet, arrancamos con los valores base
+                StartCoroutine(StartWave());
+            }
         }
     }
 
@@ -188,6 +194,21 @@ public class WaveManager : MonoBehaviourPun
         }
     }
 
+    // NUEVO MÉTODO RPC
+    [PunRPC]
+    private void RPC_SincronizarLiveOps(float spawnRateRed, bool fuegoAmigoRed)
+    {
+        // Todos los clientes actualizan sus variables locales
+        timeBetweenSpawns = spawnRateRed;
+        fuegoAmigoActivado = fuegoAmigoRed;
+
+        // Ahora que TODOS tienen la misma información, el Host arranca los zombis
+        if (PhotonNetwork.IsMasterClient)
+        {
+            StartCoroutine(StartWave());
+        }
+    }
+
     private IEnumerator WaitAndStartNextWave()
     {
         yield return new WaitForSeconds(3f);
@@ -195,10 +216,14 @@ public class WaveManager : MonoBehaviourPun
 
         if (UnityServices.State == ServicesInitializationState.Initialized)
         {
+            // Pedimos los datos actualizados. Esto volverá a llamar a AplicarConfiguracionRemota, 
+            // que sincronizará la red y llamará a StartWave() automáticamente.
             RemoteConfigService.Instance.FetchConfigs(new userAttributes(), new appAttributes());
         }
-
-        StartCoroutine(StartWave());
+        else
+        {
+            StartCoroutine(StartWave());
+        }
     }
 
     // Método RPC para decirle al HUD que muestre la derrota
