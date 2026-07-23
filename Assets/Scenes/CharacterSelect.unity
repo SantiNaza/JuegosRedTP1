@@ -443,6 +443,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   container: {fileID: 214422252}
+  btnNormal: {fileID: 0}
+  btnHighlighted: {fileID: 0}
+  btnPressed: {fileID: 0}
+  btnDisabled: {fileID: 0}
 --- !u!1 &252195192
 GameObject:
   m_ObjectHideFlags: 0
@@ -813,11 +817,11 @@ MonoBehaviour:
   gameSceneName: BoxHead
   nameInputField: {fileID: 2082455632}
   previewModels:
-  - {fileID: 1423305191}
-  - {fileID: 739299598}
+  - {fileID: 2005933343}
   - {fileID: 636457435}
   - {fileID: 615337739}
-  - {fileID: 2005933343}
+  - {fileID: 739299598}
+  - {fileID: 1423305191}
   modelLeftButton: {fileID: 376577336}
   modelRightButton: {fileID: 1361074558}
   weaponTag: Weapon

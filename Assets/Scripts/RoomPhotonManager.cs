@@ -78,14 +78,14 @@ public class RoomPhotonManager : MonoBehaviourPunCallbacks
     public override void OnJoinedLobby()
     {
         Debug.Log("Joined Lobby");
-        SetStatus("Conectado. Pod�s crear o unirte a una room.");
+        SetStatus("Conectado. Podes crear o unirte a una room.");
     }
 
     public void CreateRoom()
     {
         if (!PhotonNetwork.IsConnectedAndReady)
         {
-            SetStatus("Todav�a no est�s conectado.");
+            SetStatus("Todavia no est�s conectado.");
             return;
         }
 
@@ -95,7 +95,7 @@ public class RoomPhotonManager : MonoBehaviourPunCallbacks
 
         if (string.IsNullOrEmpty(roomName))
         {
-            SetStatus("Escrib� un nombre para crear la room.");
+            SetStatus("Escribi un nombre para crear la room.");
             return;
         }
 
@@ -118,7 +118,7 @@ public class RoomPhotonManager : MonoBehaviourPunCallbacks
     {
         if (!PhotonNetwork.IsConnectedAndReady)
         {
-            SetStatus("Todav�a no est�s conectado.");
+            SetStatus("Todavia no estas conectado.");
             return;
         }
 
@@ -128,7 +128,7 @@ public class RoomPhotonManager : MonoBehaviourPunCallbacks
 
         if (string.IsNullOrEmpty(roomName))
         {
-            SetStatus("Escrib� el nombre de la room.");
+            SetStatus("Escribi el nombre de la room.");
             return;
         }
 
@@ -371,7 +371,7 @@ public class RoomPhotonManager : MonoBehaviourPunCallbacks
     {
         if (roomNameInput == null)
         {
-            Debug.LogWarning("Room Name Input no est� asignado en el Inspector.");
+            Debug.LogWarning("Room Name Input no esta asignado en el Inspector.");
             return "";
         }
 

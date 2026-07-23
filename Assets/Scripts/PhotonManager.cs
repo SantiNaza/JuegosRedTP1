@@ -15,7 +15,7 @@ public class PhotonManager : MonoBehaviourPunCallbacks
         if (Instance == null)
         {
             Instance = this;
-            // 1. Hacemos que este objeto sobreviva al cambiar del Menú a la Escena de Juego
+            // 1. Hacemos que este objeto sobreviva al cambiar del Menï¿½ a la Escena de Juego
             DontDestroyOnLoad(this.gameObject);
         }
         else
@@ -43,8 +43,10 @@ public class PhotonManager : MonoBehaviourPunCallbacks
     public override void OnJoinedLobby()
     {
         Debug.Log("Joined Lobby");
-        // Nota mental para después: Está hardcodeado a "My Room", lo cual para el TP está perfecto.
-        PhotonNetwork.JoinRandomOrCreateRoom(roomName: "My Room");
+        // Nota mental para despuï¿½s: Estï¿½ hardcodeado a "My Room", lo cual para el TP estï¿½ perfecto.
+        // Auto-join DESACTIVADO: crear/unirse a una room lo maneja el RoomPhotonManager (UI).
+        // Con esto activo, al volver a la RoomMenu te metia solo a "My Room" sin tocar nada.
+        // PhotonNetwork.JoinRandomOrCreateRoom(roomName: "My Room");
     }
 
     public override void OnJoinedRoom()
