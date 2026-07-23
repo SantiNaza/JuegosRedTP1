@@ -42,8 +42,27 @@ public class RoomPhotonManager : MonoBehaviourPunCallbacks
     {
         instance = this;
 
+        Time.timeScale = 1f; // defensivo: si venimos de un estado pausado
+
         PhotonNetwork.AutomaticallySyncScene = true;
-        PhotonNetwork.ConnectUsingSettings();
+
+        // Si venimos de una partida seguimos CONECTADOS al Master (LeaveRoom no
+        // desconecta). Reconectar en ese estado falla y deja los callbacks sin
+        // dispararse (parecia "desconectado"). Reusamos la conexion y volvemos al lobby.
+        if (PhotonNetwork.IsConnected)
+        {
+            if (PhotonNetwork.InRoom)
+                PhotonNetwork.LeaveRoom();      // defensivo: salir de una room vieja
+            else if (!PhotonNetwork.InLobby)
+                PhotonNetwork.JoinLobby();      // caso tipico: volver de la partida
+            else
+                OnJoinedLobby();                // ya en el lobby: refrescar estado
+        }
+        else
+        {
+            // Entrada fresca desde el menu principal
+            PhotonNetwork.ConnectUsingSettings();
+        }
 
         ShowRoomPanel();
     }
@@ -229,6 +248,10 @@ public class RoomPhotonManager : MonoBehaviourPunCallbacks
 
     private void UpdateRoomListView()
     {
+        // Guard: si la UI ya no existe (manager viejo recibiendo callbacks tras
+        // descargar su escena), cortamos para no crashear en cada frame.
+        if (roomListContent == null || roomItemPrefab == null) return;
+
         // 1. Limpiamos la lista visual vieja para no duplicar botones
         foreach (Transform child in roomListContent)
         {
