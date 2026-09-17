@@ -59,7 +59,7 @@ public class CharacterSelector : MonoBehaviourPunCallbacks
         // Cargamos el nombre guardado (si existe) y actualizamos la red
         if (nameInputField != null)
         {
-            string savedName = PlayerPrefs.GetString("nickname", "Agente Desconocido");
+            string savedName = PlayerPrefs.GetString("nickname", "Unknown Agent");
             nameInputField.text = savedName;
             PhotonNetwork.NickName = savedName;
 
@@ -261,7 +261,7 @@ public class CharacterSelector : MonoBehaviourPunCallbacks
 
         // anti duplicados
         string miNombre = PhotonNetwork.NickName;
-        if (string.IsNullOrWhiteSpace(miNombre)) miNombre = "Agente";
+        if (string.IsNullOrWhiteSpace(miNombre)) miNombre = "Agent";
 
         foreach (Player p in PhotonNetwork.PlayerList)
         {
@@ -336,7 +336,7 @@ public class CharacterSelector : MonoBehaviourPunCallbacks
             if (p.CustomProperties.TryGetValue(KEY_READY, out var r) && (bool)r) ready++;
 
         if (statusText != null)
-            statusText.text = $"{ready}/{PhotonNetwork.PlayerList.Length} listos";
+            statusText.text = $"{ready}/{PhotonNetwork.PlayerList.Length} ready";
     }
 
     // Solo el master decide arrancar

@@ -140,7 +140,7 @@ public class MatchManager : MonoBehaviourPunCallbacks, IOnEventCallback
 
         string playerName = GetPlayerName(deadPlayerActorNumber);
         string colorHex = GetPlayerColorHex(deadPlayerActorNumber);
-        ShowNotification($"<color=#{colorHex}>{playerName}</color> fue eliminado.");
+        ShowNotification($"<color=#{colorHex}>{playerName}</color> was eliminated.");
 
         Debug.Log("Murió jugador: " + deadPlayerActorNumber);
         Debug.Log("Jugadores vivos restantes: " + alivePlayers.Count);
@@ -264,11 +264,11 @@ public class MatchManager : MonoBehaviourPunCallbacks, IOnEventCallback
         {
             int winnerActorNumber = resultPlayers[0];
 
-            resultText.text = "Ganó " + GetPlayerName(winnerActorNumber);
+            resultText.text = "Winner: " + GetPlayerName(winnerActorNumber);
         }
         else if (resultType == DrawResult)
         {
-            resultText.text = "Empate entre:\n";
+            resultText.text = "Draw between:\n";
 
             for (int i = 0; i < resultPlayers.Length; i++)
             {
@@ -416,12 +416,12 @@ public class MatchManager : MonoBehaviourPunCallbacks, IOnEventCallback
 
         if (player == null)
         {
-            return "Jugador " + actorNumber;
+            return "Player " + actorNumber;
         }
 
         if (string.IsNullOrEmpty(player.NickName))
         {
-            return "Jugador " + actorNumber;
+            return "Player " + actorNumber;
         }
 
         return player.NickName;
@@ -453,7 +453,7 @@ public class MatchManager : MonoBehaviourPunCallbacks, IOnEventCallback
     {
         string playerName = string.IsNullOrEmpty(otherPlayer.NickName) ? "Jugador " + otherPlayer.ActorNumber : otherPlayer.NickName;
         string colorHex = GetPlayerColorHex(otherPlayer.ActorNumber);
-        ShowNotification($"<color=#{colorHex}>{playerName}</color> se desconectó de la partida.");
+        ShowNotification($"<color=#{colorHex}>{playerName}</color> disconnected.");
 
         if (matchEnded)
         {

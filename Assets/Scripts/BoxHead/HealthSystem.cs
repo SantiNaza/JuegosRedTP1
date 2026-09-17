@@ -276,7 +276,7 @@ public class HealthSystem : MonoBehaviourPun
         isDowned = false;
         isDead = false; // ¡LA CORRECCIÓN CLAVE!
         currentHealth = maxHealth / 2;
-        Debug.Log($"[Vida] {name} REVIVIDO -> isDowned={isDowned} isDead={isDead} (ambos deben ser false)");
+        Debug.Log($"[Life] {name} \r\nREVIVED -> isDowned={isDowned} isDead={isDead} (ambos deben ser false)");
 
         if (countdownTextObj != null) countdownTextObj.SetActive(false);
 

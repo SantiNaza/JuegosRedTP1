@@ -84,14 +84,26 @@ public class HUDManager : MonoBehaviour
 
     void Start()
     {
-        if (textoExtraccion != null) textoExtraccion.gameObject.SetActive(false);
-        if (botonExtraccion != null) botonExtraccion.SetActive(false);
-        if (panelFondoMigracion != null) panelFondoMigracion.SetActive(false);
-        if (textoNotificaciones != null) textoNotificaciones.gameObject.SetActive(false);
+        Cursor.lockState = CursorLockMode.Confined;
+        Cursor.visible = true;
 
-        // Apagamos el panel de derrota al empezar
-        if (panelDerrota != null) panelDerrota.SetActive(false);
-        if (panelReporteFinal != null) panelReporteFinal.SetActive(false);
+        if (textoExtraccion != null)
+            textoExtraccion.gameObject.SetActive(false);
+
+        if (botonExtraccion != null)
+            botonExtraccion.SetActive(false);
+
+        if (panelFondoMigracion != null)
+            panelFondoMigracion.SetActive(false);
+
+        if (textoNotificaciones != null)
+            textoNotificaciones.gameObject.SetActive(false);
+
+        if (panelDerrota != null)
+            panelDerrota.SetActive(false);
+
+        if (panelReporteFinal != null)
+            panelReporteFinal.SetActive(false);
 
         AplicarPaletaInicial();
         RefrescarListaJugadores();
@@ -187,7 +199,7 @@ public class HUDManager : MonoBehaviour
             {
                 // ámbar para el número, crema para la etiqueta
                 slot.textoCargadores.text =
-                    $"<color=#EBE1CD>CARGADORES</color>  <color=#F5A828><b>{weapon.cargadoresActuales}</b></color>";
+                        $"<color=#EBE1CD>MAGAZINES</color>  <color=#F5A828><b>{weapon.cargadoresActuales}</b></color>";
             }
 
             currentIndexSlot++;
@@ -285,10 +297,9 @@ public class HUDManager : MonoBehaviour
         {
             botonExtraccion.SetActive(false);
         }
-        
-       
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
+
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
     }
 
     public void MostrarMigracion(string mensaje)

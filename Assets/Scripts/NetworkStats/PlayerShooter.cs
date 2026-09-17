@@ -103,7 +103,7 @@ public class PlayerShooter : MonoBehaviourPun
     {
         if (coordinatesUI != null)
         {
-            coordinatesUI.text = $"¡Impacto!\nCoordenadas: X:{hitCoordinates.x:F2}, Y:{hitCoordinates.y:F2}, Z:{hitCoordinates.z:F2}";
+            coordinatesUI.text = $"¡\r\nImpact!\nCoordinates: X:{hitCoordinates.x:F2}, Y:{hitCoordinates.y:F2}, Z:{hitCoordinates.z:F2}";
         }
     }
 }

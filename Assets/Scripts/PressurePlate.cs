@@ -39,7 +39,7 @@ public class PressurePlate : MonoBehaviourPun
         interactTextObj = new GameObject("TextoPlaca_" + gameObject.name);
         interactTextMesh = interactTextObj.AddComponent<TextMesh>();
 
-        interactTextMesh.text = "[E] PARA ABRIR";
+        interactTextMesh.text = "[E] TO OPEN";
         interactTextMesh.characterSize = 0.15f;
         interactTextMesh.fontSize = 40;
         interactTextMesh.anchor = TextAnchor.MiddleCenter;

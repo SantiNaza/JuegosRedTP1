@@ -88,13 +88,13 @@ public class NetworkLagSimulator : MonoBehaviour
             atajosStyle.normal.textColor = Color.gray;
 
 
-            GUI.Label(new Rect(30, 30, 300, 30), "SISTEMA DE REDUNDANCIA", tituloStyle);
+            GUI.Label(new Rect(30, 30, 300, 30), "REDUNDANCY SYSTEM", tituloStyle);
 
             // Los valores se actualizan al instante cuando tocás las flechas
-            GUI.Label(new Rect(30, 60, 300, 25), $"Lag (ARRIBA / ABAJO): {lagInMs} ms", infoStyle);
-            GUI.Label(new Rect(30, 90, 300, 25), $"Pérdida (DERECHA / IZQUIERDA): {packetLossPercentage} %", infoStyle);
+            GUI.Label(new Rect(30, 60, 300, 25), $"Lag (UP / DOWN): {lagInMs} ms", infoStyle);
+            GUI.Label(new Rect(30, 90, 300, 25), $"Loss (RIGHT / LEFT): {packetLossPercentage} %", infoStyle);
 
-            GUI.Label(new Rect(30, 130, 300, 20), "Presione [F9] para desactivar", atajosStyle);
+            GUI.Label(new Rect(30, 130, 300, 20), "Press [F9] to disable.", atajosStyle);
         }
     }
 }

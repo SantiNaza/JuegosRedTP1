@@ -62,14 +62,14 @@ public static class PlayerStatsConfig
     {
         switch (s)
         {
-            case StatType.Damage: return "Daño";
-            case StatType.MagCapacity: return "Cargador";
-            case StatType.FireRate: return "Vel. Disparo";
-            case StatType.ReloadSpeed: return "Vel. Recarga";
-            case StatType.MaxHealth: return "Salud Máx.";
-            case StatType.MoveSpeed: return "Vel. Mov.";
-            case StatType.ReviveSpeed: return "Vel. Revivir";
-            case StatType.BleedOutTime: return "Desangrado";
+            case StatType.Damage: return "Damage";
+            case StatType.MagCapacity: return "Magazine";
+            case StatType.FireRate: return "Fire Rate";
+            case StatType.ReloadSpeed: return "Reload Speed";
+            case StatType.MaxHealth: return "Max Health";
+            case StatType.MoveSpeed: return "Move Speed";
+            case StatType.ReviveSpeed: return "Revive Speed";
+            case StatType.BleedOutTime: return "Bleed Out";
         }
         return s.ToString();
     }

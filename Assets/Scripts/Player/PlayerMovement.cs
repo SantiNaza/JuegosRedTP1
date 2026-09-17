@@ -259,7 +259,7 @@ public class PlayerMovement : MonoBehaviourPun
         sinAireTextObj.transform.localPosition = new Vector3(0f, 3f, 0f);
 
         TextMesh tm = sinAireTextObj.AddComponent<TextMesh>();
-        tm.text = "¡SIN AIRE!";
+        tm.text = "¡airless!";
         tm.characterSize = 0.15f;
         tm.fontSize = 40;
         tm.anchor = TextAnchor.MiddleCenter;

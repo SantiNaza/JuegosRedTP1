@@ -117,7 +117,7 @@ public class API_LaOrden : MonoBehaviour
                 // Traducimos el JSON a una lista de C#
                 List<ReporteDescargado> ultimosReportes = JsonConvert.DeserializeObject<List<ReporteDescargado>>(jsonRespuesta);
 
-                string textoTerminal = "ARCHIVOS ANALÓGICOS RECUPERADOS:\n----------------------------------\n";
+                string textoTerminal = "RECOVERED ANALOG ARCHIVES:\n----------------------------------\n";
 
                 int jugadoresEnPartida = PhotonNetwork.CurrentRoom != null ? PhotonNetwork.CurrentRoom.PlayerCount : 1;
 
@@ -126,10 +126,10 @@ public class API_LaOrden : MonoBehaviour
                 for (int i = startIndex; i < ultimosReportes.Count; i++)
                 {
                     ReporteDescargado rep = ultimosReportes[i];
-                    textoTerminal += $"> Agente {rep.agente} | Bajas: {rep.kills} | Extracción: {rep.tiempo}\n";
+                    textoTerminal += $"> Agent {rep.agente} | Kills: {rep.kills} | Extraction: {rep.tiempo}\n";
                 }
 
-                textoTerminal += "----------------------------------\nFIN DE TRANSMISIÓN.";
+                textoTerminal += "----------------------------------\nEND OF TRANSMISSION.";
 
                 if (HUDManager.Instance != null)
                 {

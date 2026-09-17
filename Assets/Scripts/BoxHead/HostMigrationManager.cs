@@ -20,8 +20,8 @@ public class HostMigrationManager : MonoBehaviourPunCallbacks
 
         if (HUDManager.Instance != null)
         {
-            string nombre = string.IsNullOrEmpty(nuevoHost.NickName) ? "Agente " + nuevoHost.ActorNumber : nuevoHost.NickName;
-            string mensaje = "ENLACE PRIMARIO PERDIDO.\nBIBUBUBOP BIBUBUBOP\nESTABLECIENDO REDUNDANCIA CON: " + nombre + "...\nPOR FAVOR ESPERE.";
+            string nombre = string.IsNullOrEmpty(nuevoHost.NickName) ? "Agent " + nuevoHost.ActorNumber : nuevoHost.NickName;
+            string mensaje = "PRIMARY LINK LOST.\nBIBUBUBOP BIBUBUBOP\n ESTABLISHING REDUNDANCY WITH: " + nombre + "...\n\r\nPLEASE WAIT.";
             HUDManager.Instance.MostrarMigracion(mensaje);
         }
 
@@ -52,7 +52,7 @@ public class HostMigrationManager : MonoBehaviourPunCallbacks
 
         if (HUDManager.Instance != null)
         {
-            string mensajeError = "CONEXIÓN PERDIDA.\nFALLO CRÍTICO EN EL ENLACE DE RED.\nMOTIVO: " + cause.ToString() + "\nPOR FAVOR, REINICIE EL SISTEMA.";
+            string mensajeError = "CONNECTION LOST.\r\nCRITICAL NETWORK LINK FAILURE.\r\nREASON: " + cause.ToString() + "\nPlease restart the system.";
             HUDManager.Instance.MostrarMigracion(mensajeError);
         }
     }
@@ -66,8 +66,8 @@ public class HostMigrationManager : MonoBehaviourPunCallbacks
         // Solo lanzamos la notificación chiquita si era un jugador normal.
         if (!otherPlayer.IsMasterClient)
         {
-            string nombre = string.IsNullOrEmpty(otherPlayer.NickName) ? "Jugador " + otherPlayer.ActorNumber : otherPlayer.NickName;
-            string mensaje = nombre + " se desconectó.";
+            string nombre = string.IsNullOrEmpty(otherPlayer.NickName) ? "Player " + otherPlayer.ActorNumber : otherPlayer.NickName;
+            string mensaje = nombre + "  desconected.";
             
             Debug.Log(mensaje);
 

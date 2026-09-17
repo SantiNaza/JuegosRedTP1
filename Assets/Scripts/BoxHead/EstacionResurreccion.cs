@@ -27,7 +27,7 @@ public class EstacionResurreccion : MonoBehaviourPun
                     int actorARevivir = hs.chapasRecogidas[0];
 
                     // NUEVO: Buscamos el nombre del agente muerto
-                    string nombreCaido = "Agente " + actorARevivir;
+                    string nombreCaido = "Agent " + actorARevivir;
                     Player agenteMuerto = PhotonNetwork.CurrentRoom.GetPlayer(actorARevivir);
                     if (agenteMuerto != null && !string.IsNullOrEmpty(agenteMuerto.NickName))
                     {
@@ -37,7 +37,7 @@ public class EstacionResurreccion : MonoBehaviourPun
                     if (HUDManager.Instance != null)
                     {
                         // MOSTRAMOS EL NOMBRE EN LA UI CENTRAL
-                        HUDManager.Instance.MostrarTextoExtraccion("Pulsa [E] para revivir a " + nombreCaido, Color.cyan);
+                        HUDManager.Instance.MostrarTextoExtraccion("Press [E] to revive" + nombreCaido, Color.cyan);
                     }
 
                     if (Input.GetKey(KeyCode.E))

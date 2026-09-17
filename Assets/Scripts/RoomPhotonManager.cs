@@ -78,14 +78,14 @@ public class RoomPhotonManager : MonoBehaviourPunCallbacks
     public override void OnJoinedLobby()
     {
         Debug.Log("Joined Lobby");
-        SetStatus("Conectado. Podes crear o unirte a una room.");
+        SetStatus("Connected. Create or join a room.");
     }
 
     public void CreateRoom()
     {
         if (!PhotonNetwork.IsConnectedAndReady)
         {
-            SetStatus("Todavia no est�s conectado.");
+            SetStatus("Not connected yet.");
             return;
         }
 
@@ -95,7 +95,7 @@ public class RoomPhotonManager : MonoBehaviourPunCallbacks
 
         if (string.IsNullOrEmpty(roomName))
         {
-            SetStatus("Escribi un nombre para crear la room.");
+            SetStatus("Enter a name to create the room.");
             return;
         }
 
@@ -109,7 +109,7 @@ public class RoomPhotonManager : MonoBehaviourPunCallbacks
         roomOptions.EmptyRoomTtl = 60000;
         roomOptions.BroadcastPropsChangeToAll = true;
 
-        SetStatus("Creando room: " + roomName);
+        SetStatus("Creating room: " + roomName);
 
         PhotonNetwork.CreateRoom(roomName, roomOptions);
     }
@@ -118,7 +118,7 @@ public class RoomPhotonManager : MonoBehaviourPunCallbacks
     {
         if (!PhotonNetwork.IsConnectedAndReady)
         {
-            SetStatus("Todavia no estas conectado.");
+            SetStatus("Not connected yet.");
             return;
         }
 
@@ -128,11 +128,11 @@ public class RoomPhotonManager : MonoBehaviourPunCallbacks
 
         if (string.IsNullOrEmpty(roomName))
         {
-            SetStatus("Escribi el nombre de la room.");
+            SetStatus("Enter the room name.");
             return;
         }
 
-        SetStatus("Entrando a room: " + roomName);
+        SetStatus("Joining room: " + roomName);
 
         PhotonNetwork.JoinRoom(roomName);
     }
@@ -147,7 +147,7 @@ public class RoomPhotonManager : MonoBehaviourPunCallbacks
         Debug.Log("Player Count: " + playerCount);
         Debug.Log("Is Master Client: " + PhotonNetwork.IsMasterClient);
 
-        SetStatus("Entraste a la room: " + roomName);
+        SetStatus("Joined room: " + roomName);
 
         OnRoom?.Invoke();
 
@@ -277,11 +277,11 @@ public class RoomPhotonManager : MonoBehaviourPunCallbacks
     {
         if (!PhotonNetwork.IsConnectedAndReady)
         {
-            SetStatus("Todav�a no est�s conectado.");
+            SetStatus("Not connected yet.");
             return;
         }
 
-        SetStatus("Entrando a room: " + specificRoomName);
+        SetStatus("Joining room: " + specificRoomName);
         PhotonNetwork.JoinRoom(specificRoomName);
     }
 
@@ -336,7 +336,7 @@ public class RoomPhotonManager : MonoBehaviourPunCallbacks
 
     public override void OnCreateRoomFailed(short returnCode, string message)
     {
-        SetStatus("No se pudo crear la room: " + message);
+        SetStatus("Could not create the room: " + message);
         Debug.LogWarning("Create Room Failed: " + message);
     }
 
@@ -345,16 +345,16 @@ public class RoomPhotonManager : MonoBehaviourPunCallbacks
         switch (returnCode)
         {
             case ErrorCode.GameFull:
-                SetStatus("Partida llena");
+                SetStatus("Room is full");
                 break;
             case ErrorCode.GameDoesNotExist:
-                SetStatus("Partida no encontrada");
+                SetStatus("Room not found");
                 break;
             case ErrorCode.GameClosed:
-                SetStatus("Partida en curso");
+                SetStatus("Match in progress");
                 break;
             default:
-                SetStatus("No se pudo entrar a la room: " + message);
+                SetStatus("Could not join the room: " + message);
                 break;
         }
 
@@ -363,7 +363,7 @@ public class RoomPhotonManager : MonoBehaviourPunCallbacks
 
     public override void OnDisconnected(DisconnectCause cause)
     {
-        SetStatus("Desconectado de Photon: " + cause);
+        SetStatus("Disconnected: " + cause);
         Debug.LogWarning("Disconnected: " + cause);
     }
 

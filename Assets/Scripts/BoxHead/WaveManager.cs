@@ -102,7 +102,7 @@ public class WaveManager : MonoBehaviourPun
 
     private void AplicarConfiguracionRemota(ConfigResponse response)
     {
-        fuegoAmigoActivado = RemoteConfigService.Instance.appConfig.GetBool("fuegoAmigoActivado", false);
+        fuegoAmigoActivado = RemoteConfigService.Instance.appConfig.GetBool("friendlyFireEnabled", false);
         timeBetweenSpawns = RemoteConfigService.Instance.appConfig.GetFloat("SpawnRate", 1.0f);
 
         // NUEVO: Leemos los pesos desde la nube (si no existen, usan los valores por defecto que ponemos acá)

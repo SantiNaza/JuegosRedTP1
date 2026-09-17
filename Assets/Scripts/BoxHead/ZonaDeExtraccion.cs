@@ -42,7 +42,7 @@ public class ZonaDeExtraccion : MonoBehaviourPun
 
             if (HUDManager.Instance != null)
             {
-                string mensaje = "Extracción: " + Mathf.CeilToInt(tiempoRestante).ToString() + "...";
+                string mensaje = "Extraction: " + Mathf.CeilToInt(tiempoRestante).ToString() + "...";
                 HUDManager.Instance.MostrarTextoExtraccion(mensaje, Color.yellow);
             }
 
@@ -73,7 +73,7 @@ public class ZonaDeExtraccion : MonoBehaviourPun
         {
             // Agregamos un aviso visual para que el jugador no piense que el juego se tildó
             HUDManager.Instance.MostrarTextoExtraccion(
-                $"¡EXTRACCIÓN EXITOSA!\n+{xpGanada} XP | Nivel {nivelActual}\nDescargando reportes analógicos...", Color.green);
+                $"¡SUCCESSFUL EXTRACTION!\n+{xpGanada} XP | Level {nivelActual}\nDownloading analog reports...", Color.green);
         }
 
         API_LaOrden api = FindObjectOfType<API_LaOrden>();

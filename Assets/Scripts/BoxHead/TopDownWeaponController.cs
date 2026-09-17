@@ -236,7 +236,7 @@ public class TopDownWeaponController : MonoBehaviourPun
         emptyTextObj.transform.SetParent(this.transform);
         emptyTextObj.transform.localPosition = new Vector3(0f, 1.5f, 0f);
         TextMesh tm = emptyTextObj.AddComponent<TextMesh>();
-        tm.text = "¡SIN MUNICIÓN!";
+        tm.text = "¡OUT OF AMMUNITION!";
         tm.characterSize = 0.15f; tm.fontSize = 40; tm.anchor = TextAnchor.MiddleCenter; tm.alignment = TextAlignment.Center; tm.color = Color.red;
         emptyTextObj.SetActive(false);
     }
@@ -255,7 +255,7 @@ public class TopDownWeaponController : MonoBehaviourPun
         reloadTextObj.transform.SetParent(this.transform);
         reloadTextObj.transform.localPosition = new Vector3(0f, 1.5f, 0f); // <-- ALTURA CORREGIDA
         TextMesh tm = reloadTextObj.AddComponent<TextMesh>();
-        tm.text = "¡RECARGANDO!";
+        tm.text = "¡RELOADING!";
         tm.characterSize = 0.15f; tm.fontSize = 40; tm.anchor = TextAnchor.MiddleCenter; tm.alignment = TextAlignment.Center; tm.color = Color.yellow;
         reloadTextObj.SetActive(false);
     }
@@ -279,7 +279,7 @@ public class TopDownWeaponController : MonoBehaviourPun
     {
         if (dropTextObj != null && dropTextMesh != null)
         {
-            dropTextMesh.text = restantes + " cargadores restantes";
+            dropTextMesh.text = restantes + " remaining chargers";
             dropTextObj.SetActive(true);
             StartCoroutine(OcultarTextoDropRutina());
         }
