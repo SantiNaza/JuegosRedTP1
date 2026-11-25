@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: af1160f309b78954e87464ea9fe09a41, type: 3}
+  m_Name: GameConfig
+  m_EditorClassIdentifier: 
+  player: {fileID: 11400000, guid: 1c5886888dea1dc48b8ec720e52edcd6, type: 2}
+  weapon: {fileID: 11400000, guid: 5f90bf1f9cac9d94fa1b31597eb04dec, type: 2}
+  grenade: {fileID: 11400000, guid: 9991372284ffa49469197cf26be5b8b1, type: 2}
+  waves: {fileID: 11400000, guid: a6e289f323fd2404790778bbaf59241b, type: 2}
+  stats: {fileID: 11400000, guid: ed14781e383f22d48b828b7745cda448, type: 2}
+  pickups: {fileID: 11400000, guid: e5e37cb2092db624ead32d305ef01af3, type: 2}
+  vfx: {fileID: 11400000, guid: 4353a080bff010348ad143f4e3bbb5b2, type: 2}
+  presentation: {fileID: 11400000, guid: ce2eb3ae58cbfaa4eb846e16b362eda2, type: 2}
+  map: {fileID: 11400000, guid: 9186e60b1c27d35489ca3b0ed84a0a38, type: 2}
+  performance: {fileID: 11400000, guid: 29a9fa24501a1bf439761bf5e433d5d2, type: 2}

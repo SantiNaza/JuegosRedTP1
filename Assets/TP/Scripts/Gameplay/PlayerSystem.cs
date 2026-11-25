@@ -13,6 +13,8 @@ namespace TP.Gameplay
     {
         private static readonly int IsWalkingHash = Animator.StringToHash("IsWalking");
         private static readonly int IsRunningHash = Animator.StringToHash("IsRunning");
+        /// <summary>Duración del giro del golpe (constante: PlayerConfig ya tiene 10 campos).</summary>
+        private const float MeleeSpinDuration = 0.3f;
 
         private readonly PlayerConfig config;
         private readonly IInputService input;
@@ -37,6 +39,11 @@ namespace TP.Gameplay
         private float knockbackTimer;
         private bool lastWalking;
         private bool lastRunning;
+
+        // Giro del golpe: se rota el hijo del modelo (no la raíz, que sigue al mouse).
+        private Transform spinTarget;
+        private Quaternion spinBaseRotation;
+        private float spinTimer;
 
         public bool IsSpawned => go != null;
         public bool IsAlive { get; private set; }
@@ -91,6 +98,7 @@ namespace TP.Gameplay
             tr.SetPositionAndRotation(position, Quaternion.identity);
             desiredRotation = Quaternion.identity;
 
+            StopMeleeSpin();
             moveSpeed = config.moveSpeed + progression.GetBonus(StatType.MoveSpeed);
             maxStamina = config.maxStamina + progression.GetBonus(StatType.Stamina);
             MaxHealth = config.maxHealth + progression.GetBonus(StatType.MaxHealth);
@@ -116,6 +124,7 @@ namespace TP.Gameplay
             UpdateStamina(deltaTime, moving);
             UpdateAim();
             UpdateAnimation(moving);
+            UpdateMeleeSpin(deltaTime);
         }
 
         public void FixedTick(float fixedDeltaTime)
@@ -163,8 +172,42 @@ namespace TP.Gameplay
             rb.AddForce(impulse, ForceMode.Impulse);
         }
 
+        // ------------------------------ Golpe ------------------------------
+
+        public void PlayMeleeSpin()
+        {
+            if (!IsAlive || spinTarget == null) return;
+            // Si ya estaba girando, se reinicia desde la pose original.
+            spinTarget.localRotation = spinBaseRotation;
+            spinTimer = MeleeSpinDuration;
+        }
+
+        private void UpdateMeleeSpin(float deltaTime)
+        {
+            if (spinTimer <= 0f) return;
+
+            spinTimer -= deltaTime;
+            if (spinTimer <= 0f)
+            {
+                StopMeleeSpin();
+                return;
+            }
+
+            float t = 1f - spinTimer / MeleeSpinDuration;
+            float inv = 1f - t;
+            float eased = 1f - inv * inv * inv; // ease-out cúbico: arranca rápido y frena al final
+            spinTarget.localRotation = spinBaseRotation * Quaternion.Euler(0f, 360f * eased, 0f);
+        }
+
+        private void StopMeleeSpin()
+        {
+            spinTimer = 0f;
+            if (spinTarget != null) spinTarget.localRotation = spinBaseRotation;
+        }
+
         private void Die()
         {
+            StopMeleeSpin();
             IsAlive = false;
             rb.velocity = Vector3.zero;
             rb.isKinematic = true;
@@ -247,7 +290,11 @@ namespace TP.Gameplay
                 animator = models[index];
             }
 
+            spinTarget = animator != null && animator.transform != tr ? animator.transform : null;
+            if (spinTarget != null) spinBaseRotation = spinTarget.localRotation;
+
             if (animator == null) return;
+            animator.applyRootMotion = false; // el movimiento lo hace el Rigidbody, no la animación
             animator.cullingMode = AnimatorCullingMode.CullUpdateTransforms;
             foreach (AnimatorControllerParameter p in animator.parameters)
             {
@@ -256,13 +303,16 @@ namespace TP.Gameplay
             }
         }
 
-        /// <summary>Cada hijo con Animator (que no sea la raíz) se considera un modelo elegible.</summary>
+        /// <summary>
+        /// Cada hijo con Animator (que no sea la raíz) y con alguna malla debajo se considera un modelo elegible.
+        /// Los "Missing Prefab" del prefab original tienen Animator pero no malla, así que se ignoran.
+        /// </summary>
         private static List<Animator> FindModels(Transform root)
         {
             var result = new List<Animator>();
             foreach (Animator a in root.GetComponentsInChildren<Animator>(true))
             {
-                if (a.transform != root) result.Add(a);
+                if (a.transform != root && a.GetComponentInChildren<Renderer>(true) != null) result.Add(a);
             }
             return result;
         }

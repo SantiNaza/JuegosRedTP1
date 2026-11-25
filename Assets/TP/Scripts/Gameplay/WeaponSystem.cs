@@ -132,6 +132,7 @@ namespace TP.Gameplay
         {
             Vector3 center = player.Position + player.Transform.forward * 1f + Vector3.up * 0.8f;
             damage.DamageInRadius(center, playerConfig.kickRange, playerConfig.kickDamage, playerConfig.kickForce);
+            player.PlayMeleeSpin();
         }
 
         private void StartReload()

@@ -35,6 +35,8 @@ namespace TP.Core
         void TakeDamage(float amount);
         void Heal(float amount);
         void ApplyKnockback(Vector3 impulse);
+        /// <summary>Animación barata del golpe cuerpo a cuerpo: el modelo da una vuelta sobre sí mismo.</summary>
+        void PlayMeleeSpin();
     }
 
     /// <summary>Daño sobre enemigos, desacoplado del EnemySystem concreto.</summary>

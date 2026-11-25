@@ -1,0 +1,141 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a82a99d5722d3e4abd046b2788fc2dd, type: 3}
+  m_Name: WaveConfig
+  m_EditorClassIdentifier: 
+  waves:
+  - entries:
+    - type: {fileID: 11400000, guid: 45690bb86b68bc240a127c21324060ef, type: 2}
+      count: 6
+    spawnInterval: 0.84
+    healthMultiplier: 1
+    speedMultiplier: 1
+    isEliteWave: 0
+  - entries:
+    - type: {fileID: 11400000, guid: 45690bb86b68bc240a127c21324060ef, type: 2}
+      count: 8
+    - type: {fileID: 11400000, guid: 895e04bc10b28e041829529f28e2f6f6, type: 2}
+      count: 2
+    spawnInterval: 0.78
+    healthMultiplier: 1.08
+    speedMultiplier: 1.03
+    isEliteWave: 0
+  - entries:
+    - type: {fileID: 11400000, guid: 45690bb86b68bc240a127c21324060ef, type: 2}
+      count: 10
+    - type: {fileID: 11400000, guid: 895e04bc10b28e041829529f28e2f6f6, type: 2}
+      count: 3
+    - type: {fileID: 11400000, guid: 2047f87a515459b438e8477cf7fc8c86, type: 2}
+      count: 1
+    spawnInterval: 0.71999997
+    healthMultiplier: 1.16
+    speedMultiplier: 1.06
+    isEliteWave: 0
+  - entries:
+    - type: {fileID: 11400000, guid: 45690bb86b68bc240a127c21324060ef, type: 2}
+      count: 12
+    - type: {fileID: 11400000, guid: 895e04bc10b28e041829529f28e2f6f6, type: 2}
+      count: 4
+    - type: {fileID: 11400000, guid: 2047f87a515459b438e8477cf7fc8c86, type: 2}
+      count: 2
+    - type: {fileID: 11400000, guid: 6d781ce1a2d87614da1fd48f69568e73, type: 2}
+      count: 2
+    spawnInterval: 0.65999997
+    healthMultiplier: 1.24
+    speedMultiplier: 1.09
+    isEliteWave: 0
+  - entries:
+    - type: {fileID: 11400000, guid: 45690bb86b68bc240a127c21324060ef, type: 2}
+      count: 14
+    - type: {fileID: 11400000, guid: 895e04bc10b28e041829529f28e2f6f6, type: 2}
+      count: 5
+    - type: {fileID: 11400000, guid: 2047f87a515459b438e8477cf7fc8c86, type: 2}
+      count: 2
+    - type: {fileID: 11400000, guid: 6d781ce1a2d87614da1fd48f69568e73, type: 2}
+      count: 3
+    - type: {fileID: 11400000, guid: 5edfc2da6c3d44248aeaad99eb25e038, type: 2}
+      count: 1
+    spawnInterval: 0.59999996
+    healthMultiplier: 1.3199999
+    speedMultiplier: 1.12
+    isEliteWave: 1
+  - entries:
+    - type: {fileID: 11400000, guid: 45690bb86b68bc240a127c21324060ef, type: 2}
+      count: 16
+    - type: {fileID: 11400000, guid: 895e04bc10b28e041829529f28e2f6f6, type: 2}
+      count: 6
+    - type: {fileID: 11400000, guid: 2047f87a515459b438e8477cf7fc8c86, type: 2}
+      count: 3
+    - type: {fileID: 11400000, guid: 6d781ce1a2d87614da1fd48f69568e73, type: 2}
+      count: 4
+    spawnInterval: 0.53999996
+    healthMultiplier: 1.4
+    speedMultiplier: 1.15
+    isEliteWave: 0
+  - entries:
+    - type: {fileID: 11400000, guid: 45690bb86b68bc240a127c21324060ef, type: 2}
+      count: 18
+    - type: {fileID: 11400000, guid: 895e04bc10b28e041829529f28e2f6f6, type: 2}
+      count: 7
+    - type: {fileID: 11400000, guid: 2047f87a515459b438e8477cf7fc8c86, type: 2}
+      count: 3
+    - type: {fileID: 11400000, guid: 6d781ce1a2d87614da1fd48f69568e73, type: 2}
+      count: 5
+    spawnInterval: 0.48
+    healthMultiplier: 1.48
+    speedMultiplier: 1.18
+    isEliteWave: 0
+  - entries:
+    - type: {fileID: 11400000, guid: 45690bb86b68bc240a127c21324060ef, type: 2}
+      count: 20
+    - type: {fileID: 11400000, guid: 895e04bc10b28e041829529f28e2f6f6, type: 2}
+      count: 8
+    - type: {fileID: 11400000, guid: 2047f87a515459b438e8477cf7fc8c86, type: 2}
+      count: 4
+    - type: {fileID: 11400000, guid: 6d781ce1a2d87614da1fd48f69568e73, type: 2}
+      count: 6
+    spawnInterval: 0.42
+    healthMultiplier: 1.56
+    speedMultiplier: 1.21
+    isEliteWave: 0
+  - entries:
+    - type: {fileID: 11400000, guid: 45690bb86b68bc240a127c21324060ef, type: 2}
+      count: 22
+    - type: {fileID: 11400000, guid: 895e04bc10b28e041829529f28e2f6f6, type: 2}
+      count: 9
+    - type: {fileID: 11400000, guid: 2047f87a515459b438e8477cf7fc8c86, type: 2}
+      count: 4
+    - type: {fileID: 11400000, guid: 6d781ce1a2d87614da1fd48f69568e73, type: 2}
+      count: 7
+    spawnInterval: 0.35999998
+    healthMultiplier: 1.64
+    speedMultiplier: 1.24
+    isEliteWave: 0
+  - entries:
+    - type: {fileID: 11400000, guid: 45690bb86b68bc240a127c21324060ef, type: 2}
+      count: 24
+    - type: {fileID: 11400000, guid: 895e04bc10b28e041829529f28e2f6f6, type: 2}
+      count: 10
+    - type: {fileID: 11400000, guid: 2047f87a515459b438e8477cf7fc8c86, type: 2}
+      count: 5
+    - type: {fileID: 11400000, guid: 6d781ce1a2d87614da1fd48f69568e73, type: 2}
+      count: 8
+    - type: {fileID: 11400000, guid: 5edfc2da6c3d44248aeaad99eb25e038, type: 2}
+      count: 2
+    spawnInterval: 0.29999998
+    healthMultiplier: 1.72
+    speedMultiplier: 1.27
+    isEliteWave: 1
+  firstWaveDelay: 3
+  timeBetweenWaves: 5
+  maxAliveEnemies: 45
+  minSpawnDistanceToPlayer: 8

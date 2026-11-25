@@ -92,7 +92,7 @@ namespace TP.EditorTools
             try
             {
                 EditorUtility.DisplayProgressBar("TP", "Creando prefabs limpios...", 0.1f);
-                GameObject player = CleanPrefabCopy(PlayerGuid, "player", "Player", null);
+                GameObject player = CleanPrefabCopy(PlayerGuid, "Player", "Player", null);
                 GameObject zombie = CleanPrefabCopy(ZombieGuid, "Zombie1", "Zombie_Normal", null);
                 GameObject zombieFast = CleanPrefabCopy(ZombieFastGuid, "ZombieFast", "Zombie_Fast", null);
                 GameObject zombieTank = CleanPrefabCopy(ZombieTankGuid, "ZombieTank", "Zombie_Tank", null);
@@ -134,6 +134,21 @@ namespace TP.EditorTools
             }
         }
 
+        /// <summary>
+        /// Rehace solo Generated/Prefabs/Player.prefab (mismo path, así se conserva el GUID y la referencia
+        /// desde PlayerConfig). No toca la escena ni los demás configs.
+        /// </summary>
+        [MenuItem("TP/2b - Regenerar solo el prefab del jugador", priority = 3)]
+        public static void RegeneratePlayerPrefab()
+        {
+            Layers.Initialize();
+            EnsureFolders();
+            GameObject player = CleanPrefabCopy(PlayerGuid, "Player", "Player", null);
+            AssetDatabase.SaveAssets();
+            if (player != null)
+                Debug.Log("[TP] Prefab del jugador regenerado: " + string.Join(", ", TP.Gameplay.PlayerSystem.GetModelNames(player)));
+        }
+
         // =====================================================================================
         // PREFABS
         // =====================================================================================
@@ -166,6 +181,7 @@ namespace TP.EditorTools
             if (isPlayer)
             {
                 instance.tag = "Player";
+                PrepareCharacterModels(instance);
                 if (instance.GetComponent<Rigidbody>() == null) instance.AddComponent<Rigidbody>();
                 if (instance.GetComponent<Collider>() == null)
                 {
@@ -186,6 +202,37 @@ namespace TP.EditorTools
             GameObject prefab = PrefabUtility.SaveAsPrefabAsset(instance, path);
             Object.DestroyImmediate(instance);
             return prefab;
+        }
+
+        /// <summary>
+        /// El prefab original del jugador tiene varios modelos (Swat, Vanguard, ...) como hijos con Animator,
+        /// y algunos son "Missing Prefab" (el .fbx nunca se subió al repo): esos quedan con Animator pero sin
+        /// malla, así que se borran. De los que quedan, el primero queda activo y el resto apagado.
+        /// La raíz no debe dibujar nada (su MeshRenderer de cápsula es solo un placeholder).
+        /// </summary>
+        private static void PrepareCharacterModels(GameObject root)
+        {
+            var models = new List<Animator>();
+            foreach (Animator a in root.GetComponentsInChildren<Animator>(true))
+            {
+                if (a == null || a.transform == root.transform) continue;
+                bool missing = a.gameObject.name.Contains("Missing Prefab")
+                               || a.GetComponentInChildren<Renderer>(true) == null;
+                if (missing) Object.DestroyImmediate(a.gameObject);
+                else models.Add(a);
+            }
+
+            for (int i = 0; i < models.Count; i++)
+            {
+                models[i].applyRootMotion = false;
+                models[i].gameObject.SetActive(i == 0);
+            }
+
+            var rootRenderer = root.GetComponent<MeshRenderer>();
+            if (rootRenderer != null && models.Count > 0) rootRenderer.enabled = false;
+
+            if (models.Count == 0)
+                Debug.LogWarning("[TP] El prefab del jugador no tiene ningún modelo con Animator y malla.");
         }
 
         /// <summary>Quita scripts faltantes y cualquier MonoBehaviour que no sea de Unity/TextMeshPro.</summary>
