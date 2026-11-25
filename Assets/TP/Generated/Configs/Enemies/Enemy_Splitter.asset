@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a68d95e9a7191e24a8a89be7df9e8fde, type: 3}
+  m_Name: Enemy_Splitter
+  m_EditorClassIdentifier: 
+  displayName: Zombie divisor
+  prefab: {fileID: 2778642895360730261, guid: fded2885a607df041b630ea978d2ad2a, type: 3}
+  maxHealth: 130
+  moveSpeed: 2.3
+  damage: 10
+  attackRange: 1.7
+  attackCooldown: 1
+  xpReward: 8
+  splitInto: {fileID: 11400000, guid: 895e04bc10b28e041829529f28e2f6f6, type: 2}
+  splitCount: 2
