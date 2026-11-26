@@ -5,7 +5,6 @@ using TP.Core;
 
 namespace TP.UI
 {
-    /// <summary>Crea el Canvas y las pantallas, y muestra la que corresponde a cada estado del juego.</summary>
     public sealed class UIService : IDisposable
     {
         private readonly EventBus events;

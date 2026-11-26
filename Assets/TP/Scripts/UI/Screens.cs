@@ -1,27 +1,44 @@
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TP.Core;
 using TP.Gameplay;
 
 namespace TP.UI
 {
-    /// <summary>Base de las pantallas: un RectTransform raíz que se muestra u oculta.</summary>
+    // Cada pantalla tiene su propio canvas (anidado en el principal)
     public abstract class UIScreen
     {
         protected readonly RectTransform Root;
+        private readonly Canvas canvas;
+        private readonly GraphicRaycaster raycaster;
 
-        protected UIScreen(string name, Transform canvas)
+        protected UIScreen(string name, Transform parent, bool interactive)
         {
-            Root = UIFactory.Stretch(UIFactory.Rect(name, canvas));
-            Root.gameObject.SetActive(false);
+            Root = UIFactory.Stretch(UIFactory.Rect(name, parent));
+            canvas = UIFactory.AddCanvas(Root);
+            if (interactive) raycaster = Root.gameObject.AddComponent<GraphicRaycaster>();
+            SetVisible(false);
         }
 
-        public bool Visible => Root.gameObject.activeSelf;
+        public bool Visible => canvas.enabled;
 
-        public virtual void Show() => Root.gameObject.SetActive(true);
-        public virtual void Hide() => Root.gameObject.SetActive(false);
+        public virtual void Show() => SetVisible(true);
+        public virtual void Hide() => SetVisible(false);
+
+        private void SetVisible(bool value)
+        {
+            // apago el componente Canvas en vez del GameObject, asi no reconstruye las mallas al volver
+            canvas.enabled = value;
+            if (raycaster == null) return;
+
+            raycaster.enabled = value;
+            // si queda un boton seleccionado se puede apretar con Enter/Espacio aunque no se vea
+            if (!value && EventSystem.current != null)
+                EventSystem.current.SetSelectedGameObject(null);
+        }
 
         protected RectTransform CenteredColumn(string name, float width, float height, float spacing, bool withPanel)
         {
@@ -51,9 +68,6 @@ namespace TP.UI
         }
     }
 
-    // ===================================================================================
-    // MENÚ INICIAL
-    // ===================================================================================
     public sealed class MenuScreen : UIScreen
     {
         private readonly IProgressionService progression;
@@ -63,7 +77,7 @@ namespace TP.UI
 
         public MenuScreen(Transform canvas, Texture background, IGameFlow flow, IProgressionService progression,
                           IAudioService audio, List<string> modelNames, System.Action openUpgrades)
-            : base("MenuScreen", canvas)
+            : base("MenuScreen", canvas, true)
         {
             this.progression = progression;
             this.modelNames = modelNames;
@@ -80,7 +94,7 @@ namespace TP.UI
             characterButton = UIFactory.MakeButton("Character", column, "", () => { audio.Play(SfxType.UiClick); NextCharacter(); }, 520f, 74f, 28f);
             UIFactory.MakeButton("Quit", column, "SALIR", () => { audio.Play(SfxType.UiClick); flow.Quit(); }, 520f, 74f);
 
-            ColumnText(column, "WASD mover · Mouse apuntar · Click disparar · Click der. patada\nR recargar · G granada (mantener) · Shift correr · Esc pausa",
+            ColumnText(column, "WASD mover - Mouse apuntar - Click disparar - Click der. patada\nR recargar - G granada (mantener) - Shift correr - Esc pausa",
                        20f, new Color(1f, 1f, 1f, 0.6f), 70f);
         }
 
@@ -99,8 +113,7 @@ namespace TP.UI
 
         private void Refresh()
         {
-            int points = progression.PointsLeft;
-            profileText.text = $"Nivel {progression.Level}  ·  {progression.Xp} XP  ·  {points} punto{(points == 1 ? "" : "s")} libre{(points == 1 ? "" : "s")}";
+            profileText.text = $"Nivel {progression.Level} | {progression.Xp} XP | Puntos libres: {progression.PointsLeft}";
 
             if (modelNames.Count == 0)
             {
@@ -108,13 +121,10 @@ namespace TP.UI
                 return;
             }
             int index = Mathf.Clamp(progression.SelectedModel, 0, modelNames.Count - 1);
-            UIFactory.SetLabel(characterButton, $"PERSONAJE: {modelNames[index]}  ({index + 1}/{modelNames.Count})");
+            UIFactory.SetLabel(characterButton, $"PERSONAJE: {modelNames[index]} ({index + 1}/{modelNames.Count})");
         }
     }
 
-    // ===================================================================================
-    // MEJORAS (puntos de stats)
-    // ===================================================================================
     public sealed class UpgradesScreen : UIScreen
     {
         private readonly IProgressionService progression;
@@ -125,7 +135,7 @@ namespace TP.UI
 
         public UpgradesScreen(Transform canvas, Texture background, IProgressionService progression,
                               IAudioService audio, System.Action onBack)
-            : base("UpgradesScreen", canvas)
+            : base("UpgradesScreen", canvas, true)
         {
             this.progression = progression;
 
@@ -180,7 +190,7 @@ namespace TP.UI
         private void Refresh()
         {
             int left = progression.PointsLeft;
-            header.text = $"Nivel {progression.Level}  ·  Puntos: {left} / {progression.TotalPoints}";
+            header.text = $"Nivel {progression.Level} | Puntos: {left} / {progression.TotalPoints}";
 
             foreach (StatType stat in ProgressionService.Stats)
             {
@@ -195,12 +205,9 @@ namespace TP.UI
         }
     }
 
-    // ===================================================================================
-    // PAUSA
-    // ===================================================================================
     public sealed class PauseScreen : UIScreen
     {
-        public PauseScreen(Transform canvas, IGameFlow flow, IAudioService audio) : base("PauseScreen", canvas)
+        public PauseScreen(Transform canvas, IGameFlow flow, IAudioService audio) : base("PauseScreen", canvas, true)
         {
             Image dim = UIFactory.MakePanel("Dim", Root, new Color(0f, 0f, 0f, 0.55f));
             UIFactory.Stretch(dim.rectTransform);
@@ -213,9 +220,6 @@ namespace TP.UI
         }
     }
 
-    // ===================================================================================
-    // VICTORIA / DERROTA
-    // ===================================================================================
     public sealed class EndScreen : UIScreen
     {
         private readonly IMatchStats stats;
@@ -224,7 +228,7 @@ namespace TP.UI
         private readonly TextMeshProUGUI summary;
 
         public EndScreen(Transform canvas, IGameFlow flow, IMatchStats stats, IProgressionService progression,
-                         IAudioService audio) : base("EndScreen", canvas)
+                         IAudioService audio) : base("EndScreen", canvas, true)
         {
             this.stats = stats;
             this.progression = progression;
@@ -248,7 +252,7 @@ namespace TP.UI
             int minutes = Mathf.FloorToInt(stats.Duration / 60f);
             int seconds = Mathf.FloorToInt(stats.Duration % 60f);
             summary.text = $"Oleadas superadas: {stats.WavesCleared}\nZombies eliminados: {stats.Kills}\n" +
-                           $"Tiempo: {minutes:00}:{seconds:00}\nXP ganada: +{stats.XpEarned}  ·  Nivel {progression.Level}";
+                           $"Tiempo: {minutes:00}:{seconds:00}\nXP ganada: +{stats.XpEarned} (Nivel {progression.Level})";
         }
     }
 }

@@ -5,10 +5,6 @@ using TP.Core;
 
 namespace TP.UI
 {
-    /// <summary>
-    /// HUD in-game. Se actualiza por eventos (vida, munición, granadas, waves) y solo reescribe un texto
-    /// cuando el valor cambia; usa TMP SetText con números para no generar strings (GC) por frame.
-    /// </summary>
     public sealed class HudScreen : UIScreen, IUpdatable, IDisposable
     {
         private readonly EventBus events;
@@ -27,6 +23,7 @@ namespace TP.UI
         private readonly TextMeshProUGUI killsText;
         private readonly TextMeshProUGUI fpsText;
         private readonly TextMeshProUGUI messageText;
+        private readonly Canvas messageCanvas;
 
         private float messageTimer;
         private float lastStamina = -1f;
@@ -34,15 +31,17 @@ namespace TP.UI
         private float fpsTimer;
         private int fpsFrames;
 
-        public HudScreen(Transform canvas, EventBus events, IPlayerService player, bool showFps) : base("HudScreen", canvas)
+        // el HUD no tiene botones, por eso va sin GraphicRaycaster
+        public HudScreen(Transform canvas, EventBus events, IPlayerService player, bool showFps) : base("HudScreen", canvas, false)
         {
             this.events = events;
             this.player = player;
             this.showFps = showFps;
 
-            // --- Vida y stamina (arriba a la izquierda) ---
+            // cada bloque tiene su sub canvas para que al cambiar un texto no se redibuje todo el HUD
             RectTransform vitals = UIFactory.Place(UIFactory.Rect("Vitals", Root), new Vector2(0f, 1f), new Vector2(0f, 1f),
                                                    new Vector2(40f, -30f), new Vector2(520f, 120f));
+            UIFactory.AddCanvas(vitals);
             healthFill = UIFactory.MakeBar("Health", vitals, new Vector2(460f, 34f), new Color(0f, 0f, 0f, 0.6f), UIFactory.Danger);
             UIFactory.Place((RectTransform)healthFill.parent, new Vector2(0f, 1f), new Vector2(0f, 1f), Vector2.zero, new Vector2(460f, 34f));
             healthText = UIFactory.Label("HealthText", healthFill.parent, "100", 24f, Color.white);
@@ -54,9 +53,9 @@ namespace TP.UI
             killsText = UIFactory.Label("Kills", vitals, "Bajas: 0", 26f, UIFactory.Cream, TextAlignmentOptions.MidlineLeft);
             UIFactory.Place(killsText.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, -62f), new Vector2(460f, 36f));
 
-            // --- Wave (arriba al centro) ---
             RectTransform wave = UIFactory.Place(UIFactory.Rect("Wave", Root), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
                                                  new Vector2(0f, -24f), new Vector2(600f, 120f));
+            UIFactory.AddCanvas(wave);
             waveText = UIFactory.Label("WaveText", wave, "PREPARATE", 44f, UIFactory.Amber, TextAlignmentOptions.Center, FontStyles.Bold);
             UIFactory.Place(waveText.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), Vector2.zero, new Vector2(600f, 56f));
             remainingText = UIFactory.Label("Remaining", wave, "", 26f, UIFactory.Cream);
@@ -65,9 +64,9 @@ namespace TP.UI
             UIFactory.Place((RectTransform)waveFill.parent, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -96f), new Vector2(420f, 10f));
             UIFactory.SetBar(waveFill, 0f);
 
-            // --- Munición y granadas (abajo a la derecha) ---
             RectTransform weapon = UIFactory.Place(UIFactory.Rect("Weapon", Root), new Vector2(1f, 0f), new Vector2(1f, 0f),
                                                    new Vector2(-40f, 30f), new Vector2(420f, 170f));
+            UIFactory.AddCanvas(weapon);
             ammoText = UIFactory.Label("Ammo", weapon, "15 / 15", 64f, UIFactory.Amber, TextAlignmentOptions.BottomRight, FontStyles.Bold);
             UIFactory.Place(ammoText.rectTransform, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(0f, 80f), new Vector2(420f, 80f));
             magazinesText = UIFactory.Label("Mags", weapon, "", 28f, UIFactory.Cream, TextAlignmentOptions.BottomRight);
@@ -75,13 +74,15 @@ namespace TP.UI
             grenadesText = UIFactory.Label("Grenades", weapon, "", 28f, new Color(1f, 0.6f, 0.2f), TextAlignmentOptions.BottomRight);
             UIFactory.Place(grenadesText.rectTransform, new Vector2(1f, 0f), new Vector2(1f, 0f), Vector2.zero, new Vector2(420f, 36f));
 
-            // --- FPS (arriba a la derecha) y mensajes (centro) ---
             fpsText = UIFactory.Label("Fps", Root, "", 24f, new Color(0.6f, 1f, 0.6f), TextAlignmentOptions.TopRight);
             UIFactory.Place(fpsText.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-30f, -24f), new Vector2(300f, 34f));
+            UIFactory.AddCanvas(fpsText.rectTransform);
             fpsText.gameObject.SetActive(showFps);
 
             messageText = UIFactory.Label("Message", Root, "", 54f, Color.white, TextAlignmentOptions.Center, FontStyles.Bold);
             UIFactory.Place(messageText.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 180f), new Vector2(1200f, 80f));
+            messageCanvas = UIFactory.AddCanvas(messageText.rectTransform);
+            messageCanvas.enabled = false;
 
             events.Subscribe<PlayerHealthChangedEvent>(OnHealth);
             events.Subscribe<AmmoChangedEvent>(OnAmmo);
@@ -105,6 +106,7 @@ namespace TP.UI
 
         public void Tick(float deltaTime)
         {
+            // como se oculta con canvas.enabled no corre OnDisable, entonces lo corto aca
             if (!Visible) return;
 
             float stamina = player.Stamina01;
@@ -117,9 +119,16 @@ namespace TP.UI
             if (messageTimer > 0f)
             {
                 messageTimer -= deltaTime;
-                Color c = messageText.color;
-                c.a = Mathf.Clamp01(messageTimer * 2f);
-                messageText.color = c;
+                if (messageTimer <= 0f)
+                {
+                    messageCanvas.enabled = false;
+                }
+                else
+                {
+                    Color c = messageText.color;
+                    c.a = Mathf.Clamp01(messageTimer * 2f);
+                    messageText.color = c;
+                }
             }
 
             if (!showFps) return;
@@ -133,6 +142,7 @@ namespace TP.UI
             }
         }
 
+        // SetText con parametros numericos no genera strings nuevos (no hay GC)
         private void OnHealth(PlayerHealthChangedEvent e)
         {
             UIFactory.SetBar(healthFill, e.Max > 0f ? e.Current / e.Max : 0f);
@@ -148,7 +158,7 @@ namespace TP.UI
 
         private void OnGrenades(GrenadesChangedEvent e)
         {
-            if (e.Cooking) grenadesText.SetText("Granadas: {0}  ·  {1:0.0}s", e.Count, e.CookTimeLeft);
+            if (e.Cooking) grenadesText.SetText("Granadas: {0} ({1:0.0}s)", e.Count, e.CookTimeLeft);
             else grenadesText.SetText("Granadas: {0}", e.Count);
         }
 
@@ -177,6 +187,7 @@ namespace TP.UI
             messageText.text = text;
             messageText.color = color;
             messageTimer = duration;
+            messageCanvas.enabled = true;
         }
     }
 }

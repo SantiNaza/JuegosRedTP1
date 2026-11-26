@@ -6,10 +6,7 @@ using UnityEngine.UI;
 
 namespace TP.UI
 {
-    /// <summary>
-    /// Construye la UI por código (uGUI + TextMeshPro). Así las pantallas no necesitan
-    /// MonoBehaviours propios ni referencias arrastradas desde el Inspector.
-    /// </summary>
+    // La UI se arma por codigo para no tener MonoBehaviours ni referencias del Inspector
     public static class UIFactory
     {
         public static readonly Color Amber = new Color32(0xF5, 0xA8, 0x28, 0xFF);
@@ -31,8 +28,13 @@ namespace TP.UI
             scaler.referenceResolution = new Vector2(1920f, 1080f);
             scaler.matchWidthOrHeight = 0.5f;
 
-            go.AddComponent<GraphicRaycaster>();
+            // el raycaster va solo en las pantallas que tienen botones (ver UIScreen)
             return canvas;
+        }
+
+        public static Canvas AddCanvas(RectTransform rt)
+        {
+            return rt.gameObject.AddComponent<Canvas>();
         }
 
         public static void EnsureEventSystem()
@@ -74,6 +76,7 @@ namespace TP.UI
             RectTransform rt = Rect(name, parent);
             var image = rt.gameObject.AddComponent<Image>();
             image.color = color;
+            image.raycastTarget = false;
             return image;
         }
 
@@ -104,7 +107,7 @@ namespace TP.UI
         }
 
         public static Button MakeButton(string name, Transform parent, string label, UnityAction onClick,
-                                    float width = 420f, float height = 70f, float fontSize = 34f)
+                                        float width = 420f, float height = 70f, float fontSize = 34f)
         {
             RectTransform rt = Rect(name, parent);
             rt.sizeDelta = new Vector2(width, height);
@@ -156,17 +159,14 @@ namespace TP.UI
             return layout;
         }
 
-        /// <summary>Barra de progreso: devuelve el RectTransform del relleno (se escala con anchorMax.x).</summary>
+        // devuelve el relleno, se llena moviendo anchorMax.x
         public static RectTransform MakeBar(string name, Transform parent, Vector2 size, Color background, Color fill)
         {
             Image bg = MakePanel(name, parent, background);
             bg.rectTransform.sizeDelta = size;
-            bg.raycastTarget = false;
 
             Image fillImage = MakePanel("Fill", bg.rectTransform, fill);
-            fillImage.raycastTarget = false;
-            RectTransform fillRt = Stretch(fillImage.rectTransform);
-            return fillRt;
+            return Stretch(fillImage.rectTransform);
         }
 
         public static void SetBar(RectTransform fill, float normalized)
